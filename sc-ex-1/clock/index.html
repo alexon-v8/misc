@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mirror Clock & Hand Angles</title>
+  <link rel="stylesheet" href="mirror-clock.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <nav class="topbar"><a href="index.html">&larr; Hub</a><span>1. Mirror Clock &amp; |30H &minus; 5.5M| Geometry</span></nav>
+  <main class="layout">
+    <section class="panel">
+      <div id="threeBox" class="canvas-box"></div>
+      <div class="controls">
+        <label>Hour (H): <strong id="hVal">3</strong><input type="range" id="hSlider" min="1" max="12" value="3" /></label>
+        <label>Minute (M): <strong id="mVal">40</strong><input type="range" id="mSlider" min="0" max="59" value="40" /></label>
+        <button id="modeBtn">Mirror Mode: Vertical (11:60 Rule)</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Moving-Digit Engines</h2>
+      <div class="digit-stage">
+        <div class="formula-card">
+          <h3>Mirror Time Subtraction</h3>
+          <div id="mirrorAnim" class="digit-row"></div>
+        </div>
+        <div class="formula-card">
+          <h3>Angle Between Hands: |30H &minus; 5.5M|</h3>
+          <div id="angleAnim" class="digit-row"></div>
+        </div>
+      </div>
+      <h3>2D Angle Protractor Overlay</h3>
+      <canvas id="angleCanvas" width="320" height="240"></canvas>
+    </section>
+  </main>
+  <script src="mirror-clock.js"></script>
+</body>
+</html>
