@@ -3,35 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mirror Clock & Hand Angles</title>
+  <title>3D Mirror Clock & Hand Angles</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="mirror-clock.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 </head>
 <body>
-  <nav class="topbar"><a href="index.html">&larr; Hub</a><span>1. Mirror Clock &amp; |30H &minus; 5.5M| Geometry</span></nav>
+  <nav class="topbar">
+    <a href="index.html" class="back-btn">&larr; Arcade Hub</a>
+    <span class="title">EXHIBIT 01 // 3D MIRROR CLOCK &amp; |30H &minus; 5.5M| RADAR</span>
+  </nav>
+
   <main class="layout">
-    <section class="panel">
-      <div id="threeBox" class="canvas-box"></div>
-      <div class="controls">
-        <label>Hour (H): <strong id="hVal">3</strong><input type="range" id="hSlider" min="1" max="12" value="3" /></label>
-        <label>Minute (M): <strong id="mVal">40</strong><input type="range" id="mSlider" min="0" max="59" value="40" /></label>
-        <button id="modeBtn">Mirror Mode: Vertical (11:60 Rule)</button>
+    <section class="card">
+      <div class="card-header">
+        <h2>3D Reflection Chamber (Touch/Drag to Orbit 360&deg;)</h2>
+        <span class="hint">Cyan = Real Clock | Violet = Mirror Image | Dashed Lasers = Symmetry Rays</span>
       </div>
+      <div id="threeStage" class="viewport-3d"></div>
+
+      <div class="controls-grid">
+        <div class="slider-group">
+          <div class="lbl-row"><span>Hour Hand (H)</span><strong id="hReadout">03</strong></div>
+          <input type="range" id="hSlider" min="1" max="12" value="3" />
+        </div>
+        <div class="slider-group">
+          <div class="lbl-row"><span>Minute Hand (M)</span><strong id="mReadout">40</strong></div>
+          <input type="range" id="mSlider" min="0" max="59" value="40" />
+        </div>
+      </div>
+      <button id="mirrorModeBtn" class="neon-btn">Axis: Vertical Mirror (11:60 Subtraction Rule)</button>
     </section>
-    <section class="panel">
-      <h2>Moving-Digit Engines</h2>
-      <div class="digit-stage">
-        <div class="formula-card">
-          <h3>Mirror Time Subtraction</h3>
-          <div id="mirrorAnim" class="digit-row"></div>
-        </div>
-        <div class="formula-card">
-          <h3>Angle Between Hands: |30H &minus; 5.5M|</h3>
-          <div id="angleAnim" class="digit-row"></div>
-        </div>
+
+    <section class="card">
+      <h2>Kinetic Digit Subtraction &amp; Angle Protractor</h2>
+      <div class="kinetic-box">
+        <div class="k-title">MIRROR REFLECTION MACHINE</div>
+        <div id="mirrorDigits" class="digit-Theater"></div>
       </div>
-      <h3>2D Angle Protractor Overlay</h3>
-      <canvas id="angleCanvas" width="320" height="240"></canvas>
+
+      <div class="kinetic-box">
+        <div class="k-title">HAND ANGLE ENGINE: &theta; = |30H &minus; 5.5M|</div>
+        <div id="angleDigits" class="digit-Theater"></div>
+      </div>
+
+      <div class="radar-wrap">
+        <canvas id="radarCanvas"></canvas>
+      </div>
     </section>
   </main>
   <script src="mirror-clock.js"></script>
