@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mental Math &amp; Geometry Exhibition Arcade | Science Fair Hub</title>
+  <meta name="description" content="An interactive exhibition-grade arcade of 8 3D and 2D mental math, geometry, calculus, and modular arithmetic simulations for school science exhibitions." />
+  <link rel="stylesheet" href="index.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <canvas id="particleCanvas" class="bg-canvas"></canvas>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-symbol">&sum;</div>
+      <div class="brand-text">
+        <span class="hub-title">MENTAL MATH &amp; GEOMETRY</span>
+        <span class="hub-sub">Exhibition Arcade // Science Pavilion</span>
+      </div>
+    </div>
+    <div class="top-controls">
+      <button id="soundToggle" class="pill-btn" title="Toggle Soundscape">
+        <span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span>
+      </button>
+      <button id="kioskTourBtn" class="pill-btn neon-glow-btn" title="Start Automated Kiosk Tour">
+        <span class="icon">&#9654;</span> <span>Kiosk Auto-Tour</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-badge">School Science Fair Interactive Showcase</div>
+      <h1 class="hero-title">
+        The Geometry of <span class="gradient-text">Lightning Calculations</span>
+      </h1>
+      <p class="hero-desc">
+        Explore 8 interactive 3D WebGL models, geometric proofs, particle colliders, and mental math engines. Discover the visual intuition behind modular arithmetic, Vedic shortcuts, calculus approximations, and exponential bio-growth.
+      </p>
+
+      <div class="search-filter-wrap">
+        <div class="search-box">
+          <span class="search-icon">&telrec;</span>
+          <input type="text" id="searchInput" placeholder="Search simulations, formulas, or keywords (e.g. 'clock', 'modulo', 'roots', '72')..." />
+          <button id="clearSearch" class="clear-btn">&times;</button>
+        </div>
+
+        <div class="filter-pills" id="filterPills">
+          <button class="filter-pill active" data-filter="all">All Modules (8)</button>
+          <button class="filter-pill" data-filter="geometry">Geometry &amp; 3D</button>
+          <button class="filter-pill" data-filter="vedic">Mental Algebra &amp; Vedic</button>
+          <button class="filter-pill" data-filter="modular">Modular Arithmetic</button>
+          <button class="filter-pill" data-filter="calculus">Calculus &amp; Growth</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid-section">
+      <div class="arcade-grid" id="arcadeGrid">
+        <!-- Module Cards populated dynamically by index.js -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>Interactive Mental Math &amp; Geometry Exhibition Arcade &bull; Built with HTML5, CSS3, ES6 &amp; Three.js</p>
+      <p class="sub-footer">Zero Build Step &bull; GitHub Pages Static Deployment &bull; School Science Exhibition</p>
+    </div>
+  </footer>
+
+  <script src="index.js"></script>
+</body>
+</html>

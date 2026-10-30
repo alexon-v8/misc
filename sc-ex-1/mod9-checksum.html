@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08 // Mod-9 Digital Roots &amp; Casting Out Nines Collider | Exhibition Arcade</title>
+  <meta name="description" content="Base-10 laser block slicer, Casting Out Nines particle collider, and Multiplication Checksum X-Ray scanner for error detection." />
+  <link rel="stylesheet" href="mod9-checksum.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">&larr; Exhibition Hub</a>
+      <span class="mod-badge">08 // MODULAR &amp; SECURITY</span>
+      <h1 class="mod-title">Mod-9 Digital Roots &amp; Casting Out Nines Collider</h1>
+    </div>
+    <div class="top-controls">
+      <select id="quickNav" class="nav-select">
+        <option value="" disabled>Jump to Module...</option>
+        <option value="mirror-clock.html">01 // Mirror Clock</option>
+        <option value="calendar-mod7.html">02 // Calendar Mod-7</option>
+        <option value="squaring-shortcut.html">03 // Squaring Shortcut</option>
+        <option value="sqrt-perfect.html">04 // Perfect Square Roots</option>
+        <option value="newton-sqrt.html">05 // Newton-Raphson Sqrt</option>
+        <option value="cbrt-perfect.html">06 // Perfect Cube Roots</option>
+        <option value="rule-72-110.html">07 // Rule of 72 &amp; 110</option>
+        <option value="mod9-checksum.html" selected>08 // Mod-9 Checksums</option>
+      </select>
+      <button id="soundToggle" class="pill-btn"><span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span></button>
+      <button id="autoDemoBtn" class="pill-btn neon-btn">Auto-Demo: OFF</button>
+      <button id="challengeBtn" class="pill-btn challenge-btn">&#127918; Tamper Detective</button>
+    </div>
+  </nav>
+
+  <main class="layout">
+    <!-- Left Column: Casting Out Nines Collider & Base-10 Slicer -->
+    <section class="glass-panel main-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <h2>"Casting Out Nines" Particle Collider</h2>
+          <span class="hint">Watch digits that sum to 9 (e.g. 4+5, 7+2, 9) collide &amp; annihilate into energy sparks</span>
+        </div>
+        <div id="drResultBadge" class="dr-badge">dr(54,927) = 9 &equiv; 0</div>
+      </div>
+
+      <!-- Particle Collider Ring Canvas -->
+      <div class="canvas-wrap">
+        <canvas id="colliderCanvas"></canvas>
+      </div>
+
+      <div class="collider-action-bar">
+        <button id="castNinesBtn" class="action-btn-zap">&#9889; Cast Out Nines (Annihilate!)</button>
+        <button id="resetColliderBtn" class="action-btn-sec">&#8635; Reload Orbs</button>
+      </div>
+
+      <!-- Base-10 Laser Slicer Visual Breakdown -->
+      <div class="slicer-card">
+        <div class="slicer-title">Base-10 Laser Slicer // Why 10&supk; &equiv; 1 (mod 9)?</div>
+        <div class="slicer-chips">
+          <div class="s-chip">1,000 = <strong>999</strong> + 1 &rarr; <strong>1</strong></div>
+          <div class="s-chip">100 = <strong>99</strong> + 1 &rarr; <strong>1</strong></div>
+          <div class="s-chip">10 = <strong>9</strong> + 1 &rarr; <strong>1</strong></div>
+          <div class="s-chip highlight">Therefore: &sum; d<sub>i</sub>10<sup>i</sup> &equiv; &sum; d<sub>i</sub> (mod 9)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Multiplication Checksum X-Ray Scanner -->
+    <section class="glass-panel scanner-panel">
+      <div class="panel-header">
+        <h2>Multiplication Checksum X-Ray Scanner</h2>
+        <span class="badge-formula">dr(A &times; B) &equiv; dr(A) &times; dr(B) (mod 9)</span>
+      </div>
+
+      <div class="calc-inputs-card">
+        <div class="inputs-row">
+          <div class="f-box">
+            <label for="numA">Factor A</label>
+            <input type="number" id="numA" value="487" min="1" max="99999" />
+          </div>
+          <span class="mult-sym">&times;</span>
+          <div class="f-box">
+            <label for="numB">Factor B</label>
+            <input type="number" id="numB" value="63" min="1" max="99999" />
+          </div>
+          <span class="mult-sym">=</span>
+          <div class="f-box product-box">
+            <label>Product C (Click to Tamper)</label>
+            <div id="productDigits" class="product-digits-strip">
+              <!-- Clickable digits for tamper testing -->
+            </div>
+          </div>
+        </div>
+
+        <div class="preset-strip">
+          <span class="preset-label">Presets:</span>
+          <button class="preset-chip" data-a="487" data-b="63">487 &times; 63</button>
+          <button class="preset-chip" data-a="925" data-b="418">925 &times; 418</button>
+          <button class="preset-chip" data-a="734" data-b="29">734 &times; 29</button>
+          <button class="preset-chip" data-a="1234" data-b="56">1234 &times; 56</button>
+        </div>
+      </div>
+
+      <!-- X-Ray Scanner Result Screen -->
+      <div class="xray-screen" id="xrayScreen">
+        <div class="xray-beam-scan" id="xrayBeam"></div>
+        <div class="xray-content">
+          <div class="checksum-row">
+            <span class="c-title">Factor A Root:</span>
+            <span id="drA" class="c-val">dr(487) = 4+8+7 = 19 &rarr; 1</span>
+          </div>
+          <div class="checksum-row">
+            <span class="c-title">Factor B Root:</span>
+            <span id="drB" class="c-val">dr(63) = 6+3 = 9 &rarr; 0 (or 9)</span>
+          </div>
+          <div class="checksum-row">
+            <span class="c-title">Expected Checksum:</span>
+            <strong id="expectedDR" class="c-val text-purple">1 &times; 0 &equiv; 0</strong>
+          </div>
+          <div class="checksum-row">
+            <span class="c-title">Actual Product Root:</span>
+            <strong id="actualDR" class="c-val text-green">dr(30681) &equiv; 0</strong>
+          </div>
+          <div id="verdictBanner" class="verdict-banner pass">
+            &#10004; CHECKSUM VERIFIED &bull; CALCULATION IS VALID
+          </div>
+        </div>
+      </div>
+
+      <!-- Tamper Explainer -->
+      <div class="tamper-explainer">
+        <strong>&#128065; Tamper Test Feature:</strong>
+        Click any digit above in the Product C display to corrupt it! Watch the X-Ray scanner beam detect the parity breakdown, trigger the tamper alarm, and prove the math was altered.
+      </div>
+    </section>
+  </main>
+
+  <!-- Challenge Modal -->
+  <div id="challengeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>&#127918; Tamper Detective</h3>
+        <button id="closeChallenge" class="close-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-bar">
+          <div>Caught: <strong id="streakCount">0</strong></div>
+          <div>Time Left: <strong id="timerVal">20s</strong></div>
+        </div>
+        <div class="prompt-box">
+          A mischievous student altered one calculation! Is this product valid or tampered?
+          <div id="targetEquation" class="big-equation">487 &times; 63 = 30,681</div>
+        </div>
+        <div class="options-grid-2">
+          <button id="btnValid" class="detect-btn valid-btn">&#10004; Valid Calculation</button>
+          <button id="btnTampered" class="detect-btn tamper-btn">&#9888; TAMPERED / FRAUDULENT!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="mod9-checksum.js"></script>
+</body>
+</html>

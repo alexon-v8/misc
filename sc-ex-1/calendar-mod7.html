@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02 // Calendar Modulo-7 Arithmetic &amp; Heptagonal Prism | Exhibition Arcade</title>
+  <meta name="description" content="3D Heptagonal Time Gear and Mod-7 Remainder Vaporizer Funnel for mental calendar arithmetic and weekday determination." />
+  <link rel="stylesheet" href="calendar-mod7.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">&larr; Exhibition Hub</a>
+      <span class="mod-badge">02 // MODULAR</span>
+      <h1 class="mod-title">Calendar Modulo-7 &amp; Heptagonal Prism</h1>
+    </div>
+    <div class="top-controls">
+      <select id="quickNav" class="nav-select">
+        <option value="" disabled>Jump to Module...</option>
+        <option value="mirror-clock.html">01 // Mirror Clock</option>
+        <option value="calendar-mod7.html" selected>02 // Calendar Mod-7</option>
+        <option value="squaring-shortcut.html">03 // Squaring Shortcut</option>
+        <option value="sqrt-perfect.html">04 // Perfect Square Roots</option>
+        <option value="newton-sqrt.html">05 // Newton-Raphson Sqrt</option>
+        <option value="cbrt-perfect.html">06 // Perfect Cube Roots</option>
+        <option value="rule-72-110.html">07 // Rule of 72 &amp; 110</option>
+        <option value="mod9-checksum.html">08 // Mod-9 Checksums</option>
+      </select>
+      <button id="soundToggle" class="pill-btn"><span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span></button>
+      <button id="autoDemoBtn" class="pill-btn neon-btn">Auto-Demo: OFF</button>
+      <button id="challengeBtn" class="pill-btn challenge-btn">&#127918; Day Blitz</button>
+    </div>
+  </nav>
+
+  <main class="layout">
+    <!-- Left Column: 3D Heptagonal Gear & Date Controls -->
+    <section class="glass-panel gear-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <h2>3D Heptagonal Time Gear</h2>
+          <span class="hint">Rotates face forward matching (Sum mod 7) &bull; Drag to rotate manually</span>
+        </div>
+        <div id="dayResultBadge" class="day-badge">...</div>
+      </div>
+
+      <div id="gearBox" class="canvas-3d"></div>
+
+      <div class="date-picker-card">
+        <div class="date-input-row">
+          <div class="field-grp">
+            <label for="yearInput">Year (YYYY)</label>
+            <input type="number" id="yearInput" min="1600" max="2399" value="2026" />
+          </div>
+          <div class="field-grp">
+            <label for="monthInput">Month</label>
+            <select id="monthInput">
+              <option value="0">January (Code: 0 / Leap: 6)</option>
+              <option value="1">February (Code: 3 / Leap: 2)</option>
+              <option value="2">March (Code: 3)</option>
+              <option value="3">April (Code: 6)</option>
+              <option value="4">May (Code: 1)</option>
+              <option value="5">June (Code: 4)</option>
+              <option value="6">July (Code: 6)</option>
+              <option value="7">August (Code: 2)</option>
+              <option value="8">September (Code: 5)</option>
+              <option value="9" selected>October (Code: 0)</option>
+              <option value="10">November (Code: 3)</option>
+              <option value="11">December (Code: 5)</option>
+            </select>
+          </div>
+          <div class="field-grp">
+            <label for="dayInput">Day (1-31)</label>
+            <input type="number" id="dayInput" min="1" max="31" value="30" />
+          </div>
+        </div>
+
+        <div class="preset-strip">
+          <span class="preset-label">Famous Dates:</span>
+          <button class="preset-chip" data-y="1969" data-m="6" data-d="20">Moon Landing (1969)</button>
+          <button class="preset-chip" data-y="2000" data-m="0" data-d="1">Y2K (2000)</button>
+          <button class="preset-chip" data-y="1947" data-m="7" data-d="15">India Independence (1947)</button>
+          <button class="preset-chip" data-y="1776" data-m="6" data-d="4">US Declaration (1776)</button>
+          <button class="preset-chip" data-y="2026" data-m="9" data-d="30">Today (2026-10-30)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Mod-7 Remainder Vaporizer Funnel -->
+    <section class="glass-panel funnel-panel">
+      <div class="panel-header">
+        <h2>Mod-7 Remainder Vaporizer Funnel</h2>
+        <span class="badge-formula">Day = (C + Y + &lfloor;Y/4&rfloor; + M + D) mod 7</span>
+      </div>
+
+      <!-- Funnel Breakdown Chamber -->
+      <div class="funnel-chamber" id="funnelChamber">
+        <!-- Injected via calendar-mod7.js -->
+      </div>
+
+      <!-- Action Button -->
+      <button id="vaporizeBtn" class="vaporize-trigger-btn">
+        <span class="zap-icon">&#9889;</span> Vaporize Multiples of 7!
+      </button>
+
+      <!-- Month & Century Code Reference Matrix -->
+      <div class="matrix-card">
+        <div class="matrix-title">Mental Quick-Reference Lookup Table</div>
+        <div class="matrix-grid">
+          <div class="matrix-item">
+            <strong>Centuries (mod 400)</strong>
+            <span>1600s: 6 | 1700s: 4<br/>1800s: 2 | 1900s: 0<br/>2000s: 6 | 2100s: 4</span>
+          </div>
+          <div class="matrix-item">
+            <strong>Month Codes (033 614 625 035)</strong>
+            <span>Jan:0 Feb:3 Mar:3 Apr:6<br/>May:1 Jun:4 Jul:6 Aug:2<br/>Sep:5 Oct:0 Nov:3 Dec:5</span>
+          </div>
+          <div class="matrix-item">
+            <strong>Remainder &rarr; Weekday</strong>
+            <span>0:Sun &bull; 1:Mon &bull; 2:Tue &bull; 3:Wed<br/>4:Thu &bull; 5:Fri &bull; 6:Sat</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Challenge Modal -->
+  <div id="challengeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>&#127918; Date Day Blitz</h3>
+        <button id="closeChallenge" class="close-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-bar">
+          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Time Left: <strong id="timerVal">25s</strong></div>
+        </div>
+        <div class="prompt-box">
+          What day of the week was:
+          <div id="targetDatePrompt" class="big-date">1969-07-20</div>
+        </div>
+        <div class="options-grid-7" id="optionsGrid7"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="calendar-mod7.js"></script>
+</body>
+</html>

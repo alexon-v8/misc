@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07 // Bio-Growth Rule of 72 &amp; 110 | Exhibition Arcade</title>
+  <meta name="description" content="Biological exponential growth simulator with Petri dish binary fission, 72-factor wheel slicer, and Rule of 72 and 110 mathematical comparisons." />
+  <link rel="stylesheet" href="rule-72-110.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">&larr; Exhibition Hub</a>
+      <span class="mod-badge">07 // BIOLOGY &amp; MATH</span>
+      <h1 class="mod-title">Bio-Growth: Rule of 72 &amp; 110 Doubling Simulator</h1>
+    </div>
+    <div class="top-controls">
+      <select id="quickNav" class="nav-select">
+        <option value="" disabled>Jump to Module...</option>
+        <option value="mirror-clock.html">01 // Mirror Clock</option>
+        <option value="calendar-mod7.html">02 // Calendar Mod-7</option>
+        <option value="squaring-shortcut.html">03 // Squaring Shortcut</option>
+        <option value="sqrt-perfect.html">04 // Perfect Square Roots</option>
+        <option value="newton-sqrt.html">05 // Newton-Raphson Sqrt</option>
+        <option value="cbrt-perfect.html">06 // Perfect Cube Roots</option>
+        <option value="rule-72-110.html" selected>07 // Rule of 72 &amp; 110</option>
+        <option value="mod9-checksum.html">08 // Mod-9 Checksums</option>
+      </select>
+      <button id="soundToggle" class="pill-btn"><span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span></button>
+      <button id="autoDemoBtn" class="pill-btn neon-btn">Auto-Demo: OFF</button>
+      <button id="challengeBtn" class="pill-btn challenge-btn">&#127918; Doubling Blitz</button>
+    </div>
+  </nav>
+
+  <main class="layout">
+    <!-- Left Column: Petri Dish Simulator & Growth Rate Controls -->
+    <section class="glass-panel sim-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <h2>Biological Exponential Sandbox</h2>
+          <span class="hint">Watch cells multiply &bull; Track doubling &amp; tripling generations</span>
+        </div>
+        <div class="model-pills">
+          <button class="model-btn active" data-model="bacteria">Bacteria Fission</button>
+          <button class="model-btn" data-model="algae">Algae Pond</button>
+          <button class="model-btn" data-model="crop">Biomass Yield</button>
+        </div>
+      </div>
+
+      <!-- Petri Dish Canvas -->
+      <div class="canvas-wrap">
+        <canvas id="petriCanvas"></canvas>
+        <div class="dish-overlay">
+          <div class="stat-bubble">
+            <span class="bubble-label">Population:</span>
+            <strong id="popCount" class="bubble-val">100</strong>
+          </div>
+          <div class="stat-bubble">
+            <span class="bubble-label">Doubled Count:</span>
+            <strong id="doubleEvents" class="bubble-val text-green">0x</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rate Slider & Controls -->
+      <div class="controls-card">
+        <div class="slider-row">
+          <label for="rateSlider">Hourly Growth Rate (r%):</label>
+          <strong id="rateDisplay" class="rate-badge">8%</strong>
+        </div>
+        <input type="range" id="rateSlider" min="1" max="36" value="8" />
+        <div class="ticks"><span>1%</span><span>6%</span><span>8%</span><span>12%</span><span>18%</span><span>24%</span><span>36%</span></div>
+
+        <div class="playback-strip">
+          <button id="playPauseBtn" class="btn-play">&#9654; Start Growth</button>
+          <button id="resetSimBtn" class="btn-reset">&#8635; Inoculate Dish</button>
+          <div class="preset-group">
+            <span class="p-label">Rates:</span>
+            <button class="preset-chip" data-r="6">6% (12h)</button>
+            <button class="preset-chip" data-r="8">8% (9h)</button>
+            <button class="preset-chip" data-r="9">9% (8h)</button>
+            <button class="preset-chip" data-r="12">12% (6h)</button>
+            <button class="preset-chip" data-r="18">18% (4h)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Rule of 72 & 110 Math Engine & Factor Slicer -->
+    <section class="glass-panel math-panel">
+      <div class="panel-header">
+        <h2>Doubling &amp; Tripling Math Engine</h2>
+        <span class="badge-formula">t &asymp; 72 / r%</span>
+      </div>
+
+      <!-- Time Predictions Grid -->
+      <div class="predictions-grid">
+        <div class="pred-card">
+          <span class="p-title">Doubling Time (2&times;)</span>
+          <div class="p-compare">
+            <div>
+              <span class="p-type">Rule of 72</span>
+              <strong id="rule72Time" class="p-val text-green">9.0 hrs</strong>
+            </div>
+            <div>
+              <span class="p-type">Exact (ln 2)</span>
+              <strong id="exact2Time" class="p-val text-muted">9.006 hrs</strong>
+            </div>
+          </div>
+          <span class="p-formula">t &asymp; 72 / 8 = 9.0 hrs</span>
+        </div>
+
+        <div class="pred-card">
+          <span class="p-title">Tripling Time (3&times;)</span>
+          <div class="p-compare">
+            <div>
+              <span class="p-type">Rule of 110</span>
+              <strong id="rule110Time" class="p-val text-amber">13.8 hrs</strong>
+            </div>
+            <div>
+              <span class="p-type">Exact (ln 3)</span>
+              <strong id="exact3Time" class="p-val text-muted">14.27 hrs</strong>
+            </div>
+          </div>
+          <span class="p-formula">t &asymp; 110 / 8 = 13.75 hrs</span>
+        </div>
+      </div>
+
+      <!-- 72 Factor Wheel Canvas Slicer -->
+      <div class="factor-wheel-card">
+        <div class="wheel-header">
+          <span>The 12 Divisors of 72 (Mental Divisibility Powerhouse)</span>
+          <span class="wheel-hint">Hover or tap slices</span>
+        </div>
+        <div class="wheel-wrap">
+          <canvas id="wheelCanvas"></canvas>
+        </div>
+        <div class="divisor-chips">
+          <span class="d-chip">1</span><span class="d-chip">2</span><span class="d-chip">3</span><span class="d-chip">4</span>
+          <span class="d-chip">6</span><span class="d-chip">8</span><span class="d-chip">9</span><span class="d-chip">12</span>
+          <span class="d-chip">18</span><span class="d-chip">24</span><span class="d-chip">36</span><span class="d-chip">72</span>
+        </div>
+      </div>
+
+      <!-- Mathematical Derivation Box -->
+      <div class="derivation-card">
+        <div class="derivation-title">Why 72 instead of 69.3?</div>
+        <p class="derivation-text">
+          Exact compound continuous doubling is <strong>100 &times; ln(2) &asymp; 69.3%</strong>. However, 69.3 is difficult to divide mentally and applies to continuous growth. For periodic compound intervals (e.g. 6% to 10%), the actual factor rises to ~71-73. <strong>72</strong> is chosen because it possesses <strong>12 whole divisors</strong>, making exhibition mental arithmetic instantaneous!
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Challenge Modal -->
+  <div id="challengeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>&#127918; Doubling Time Blitz</h3>
+        <button id="closeChallenge" class="close-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-bar">
+          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Time Left: <strong id="timerVal">20s</strong></div>
+        </div>
+        <div class="prompt-box">
+          At an 8% growth rate, population doubles in:
+          <div id="targetPrompt" class="big-prompt">8% Rate &rarr; ? hrs</div>
+        </div>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="rule-72-110.js"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05 // Newton-Raphson Imperfect Square Roots | Exhibition Arcade</title>
+  <meta name="description" content="Visualizing imperfect square root approximation via Liquid Border Geometry and Newton-Raphson tangent line iterations." />
+  <link rel="stylesheet" href="newton-sqrt.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">&larr; Exhibition Hub</a>
+      <span class="mod-badge">05 // CALCULUS</span>
+      <h1 class="mod-title">Newton-Raphson &amp; Liquid Border Geometry</h1>
+    </div>
+    <div class="top-controls">
+      <select id="quickNav" class="nav-select">
+        <option value="" disabled>Jump to Module...</option>
+        <option value="mirror-clock.html">01 // Mirror Clock</option>
+        <option value="calendar-mod7.html">02 // Calendar Mod-7</option>
+        <option value="squaring-shortcut.html">03 // Squaring Shortcut</option>
+        <option value="sqrt-perfect.html">04 // Perfect Square Roots</option>
+        <option value="newton-sqrt.html" selected>05 // Newton-Raphson Sqrt</option>
+        <option value="cbrt-perfect.html">06 // Perfect Cube Roots</option>
+        <option value="rule-72-110.html">07 // Rule of 72 &amp; 110</option>
+        <option value="mod9-checksum.html">08 // Mod-9 Checksums</option>
+      </select>
+      <button id="soundToggle" class="pill-btn"><span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span></button>
+      <button id="autoDemoBtn" class="pill-btn neon-btn">Auto-Demo: OFF</button>
+      <button id="challengeBtn" class="pill-btn challenge-btn">&#127918; Root Estimator</button>
+    </div>
+  </nav>
+
+  <main class="layout">
+    <!-- Left Column: Liquid Border Canvas & Interactive Magnifier -->
+    <section class="glass-panel main-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <h2>Liquid Border Geometry</h2>
+          <span class="hint">Surplus area d pours equally along two edges (2a) &bull; Corner gap = (d/2a)&sup2;</span>
+        </div>
+        <div id="approxBadge" class="approx-badge">&radic;67 &asymp; 8.1875</div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="liquidCanvas"></canvas>
+      </div>
+
+      <!-- Controls Slider -->
+      <div class="controls-card">
+        <div class="slider-row">
+          <label for="nSlider">Number N (Non-Perfect Square):</label>
+          <strong id="nValDisplay" class="big-n">67</strong>
+        </div>
+        <input type="range" id="nSlider" min="5" max="150" value="67" />
+        <div class="ticks"><span>5</span><span>30</span><span>67</span><span>100</span><span>150</span></div>
+
+        <div class="preset-strip">
+          <span class="preset-label">Exhibition Examples:</span>
+          <button class="preset-chip" data-n="67">&radic;67 (8&sup2;+3)</button>
+          <button class="preset-chip" data-n="29">&radic;29 (5&sup2;+4)</button>
+          <button class="preset-chip" data-n="105">&radic;105 (10&sup2;+5)</button>
+          <button class="preset-chip" data-n="10">&radic;10 (3&sup2;+1)</button>
+          <button class="preset-chip" data-n="83">&radic;83 (9&sup2;+2)</button>
+          <button class="preset-chip" data-n="50">&radic;50 (7&sup2;+1)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Tangent Curve & Precision Comparison -->
+    <section class="glass-panel math-panel">
+      <div class="panel-header">
+        <h2>Calculus Tangent &amp; Error Analysis</h2>
+        <span class="badge-formula">&radic;N &asymp; a + d / (2a)</span>
+      </div>
+
+      <!-- Comparison Metrics Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="m-label">Mental Math (Liquid 1st Order)</span>
+          <strong id="mOrder1" class="m-val text-amber">8.187500</strong>
+          <span id="mErr1" class="m-sub">Error: +0.0033%</span>
+        </div>
+        <div class="metric-card">
+          <span class="m-label">Newton-Raphson (2nd Order)</span>
+          <strong id="mOrder2" class="m-val text-green">8.185352</strong>
+          <span id="mErr2" class="m-sub">Error: +0.000001%</span>
+        </div>
+        <div class="metric-card full">
+          <span class="m-label">True Mathematical Value</span>
+          <strong id="mTrue" class="m-val text-cyan">8.185352771...</strong>
+          <span class="m-sub">Floating-point standard</span>
+        </div>
+      </div>
+
+      <!-- Newton Curve Plot Canvas -->
+      <div class="curve-card">
+        <div class="curve-header">
+          <span>f(x) = x&sup2; &minus; N Tangent Intersection</span>
+          <span class="curve-hint">x&sub1; = x&sub0; &minus; f(x&sub0;)/f'(x&sub0;)</span>
+        </div>
+        <canvas id="curveCanvas"></canvas>
+      </div>
+
+      <!-- Microscopic Error Breakdown -->
+      <div class="corner-error-card">
+        <div class="corner-title">&#128269; The Microscopic Corner Discrepancy</div>
+        <p id="cornerText" class="corner-desc">
+          Because the two border strips of width <strong>d/(2a) = 3/16 = 0.1875</strong> overlap at the top-right corner, a tiny square of area <strong>(d/2a)&sup2; = 0.03515</strong> is counted twice!
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Challenge Modal -->
+  <div id="challengeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>&#127918; Precision Root Estimator</h3>
+        <button id="closeChallenge" class="close-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-bar">
+          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Time Left: <strong id="timerVal">20s</strong></div>
+        </div>
+        <div class="prompt-box">
+          Estimate the value using a + d/(2a):
+          <div id="targetPrompt" class="big-prompt">&radic;38</div>
+        </div>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="newton-sqrt.js"></script>
+</body>
+</html>

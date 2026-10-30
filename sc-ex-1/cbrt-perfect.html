@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06 // Perfect Cube Roots &amp; 3D Voxel Cube | Exhibition Arcade</title>
+  <meta name="description" content="3D exploding voxel cube in Three.js representing (10a+b)³ expansion, 2↔8 and 3↔7 Unit Digit Flip Gate, and cube root mental calculations." />
+  <link rel="stylesheet" href="cbrt-perfect.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">&larr; Exhibition Hub</a>
+      <span class="mod-badge">06 // VEDIC 3D</span>
+      <h1 class="mod-title">Perfect Cube Roots: 3D Voxel Cube &amp; Flip Gate</h1>
+    </div>
+    <div class="top-controls">
+      <select id="quickNav" class="nav-select">
+        <option value="" disabled>Jump to Module...</option>
+        <option value="mirror-clock.html">01 // Mirror Clock</option>
+        <option value="calendar-mod7.html">02 // Calendar Mod-7</option>
+        <option value="squaring-shortcut.html">03 // Squaring Shortcut</option>
+        <option value="sqrt-perfect.html">04 // Perfect Square Roots</option>
+        <option value="newton-sqrt.html">05 // Newton-Raphson Sqrt</option>
+        <option value="cbrt-perfect.html" selected>06 // Perfect Cube Roots</option>
+        <option value="rule-72-110.html">07 // Rule of 72 &amp; 110</option>
+        <option value="mod9-checksum.html">08 // Mod-9 Checksums</option>
+      </select>
+      <button id="soundToggle" class="pill-btn"><span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span></button>
+      <button id="autoDemoBtn" class="pill-btn neon-btn">Auto-Demo: OFF</button>
+      <button id="challengeBtn" class="pill-btn challenge-btn">&#127918; Cube Sprint</button>
+    </div>
+  </nav>
+
+  <main class="layout">
+    <!-- Left Column: 3D Exploding Voxel Cube & Controls -->
+    <section class="glass-panel voxel-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <h2>3D (10a + b)&sup3; Exploding Voxel Cube</h2>
+          <span class="hint">1000a&sup3; (cyan) &bull; 300a&sup2;b (purple) &bull; 30ab&sup2; (pink) &bull; b&sup3; (green)</span>
+        </div>
+        <div id="cbrtResultBadge" class="cbrt-badge">&#8731;314432 = 68</div>
+      </div>
+
+      <div id="cubeBox" class="canvas-3d"></div>
+
+      <!-- Explosion Slider -->
+      <div class="slider-card">
+        <div class="slider-row">
+          <span>Voxel Cube Explosion Distance:</span>
+          <strong id="explodeVal" class="val-badge">0%</strong>
+        </div>
+        <input type="range" id="explodeSlider" min="0" max="100" value="0" />
+      </div>
+
+      <!-- Input Select & Presets -->
+      <div class="input-card">
+        <div class="input-row">
+          <label for="cubeSelect">Choose a Perfect Cube (N = x&sup3;):</label>
+          <select id="cubeSelect" class="styled-select">
+            <option value="314432" selected>314,432 (Root = 68)</option>
+            <option value="19683">19,683 (Root = 27)</option>
+            <option value="103823">103,823 (Root = 47)</option>
+            <option value="592704">592,704 (Root = 84)</option>
+            <option value="912673">912,673 (Root = 97)</option>
+            <option value="2197">2,197 (Root = 13)</option>
+            <option value="5832">5,832 (Root = 18)</option>
+            <option value="74088">74,088 (Root = 42)</option>
+            <option value="175616">175,616 (Root = 56)</option>
+            <option value="804357">804,357 (Root = 93)</option>
+          </select>
+        </div>
+
+        <div class="preset-strip">
+          <span class="preset-label">Exhibition Presets:</span>
+          <button class="preset-chip" data-n="314432">314,432 (68)</button>
+          <button class="preset-chip" data-n="19683">19,683 (27)</button>
+          <button class="preset-chip" data-n="103823">103,823 (47)</button>
+          <button class="preset-chip" data-n="592704">592,704 (84)</button>
+          <button class="preset-chip" data-n="912673">912,673 (97)</button>
+          <button class="preset-chip" data-n="2197">2,197 (13)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: 2<->8 / 3<->7 Flip Gate & Cube Staircase -->
+    <section class="glass-panel math-panel">
+      <div class="panel-header">
+        <h2>Vedic Deduction Engines</h2>
+        <span class="badge-formula">2&harr;8 &bull; 3&harr;7 Flip Gate</span>
+      </div>
+
+      <!-- Stage 1: Last 3 Digits Slice -->
+      <div class="stage-card">
+        <div class="stage-title">Stage 1 // Last 3 Digits Slice</div>
+        <div class="slice-display">
+          <div class="slice-chunk prefix-chunk">
+            <span class="chunk-label">THOUSANDS PREFIX</span>
+            <span id="prefixChunkVal" class="big-chunk">314</span>
+          </div>
+          <div class="laser-divider"></div>
+          <div class="slice-chunk suffix-chunk">
+            <span class="chunk-label">LAST 3 DIGITS</span>
+            <span id="suffixChunkVal" class="big-chunk">432</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 2: Unit Digit Flip Gate -->
+      <div class="stage-card highlight">
+        <div class="stage-title">Stage 2 // The 2&harr;8 and 3&harr;7 Unit Flip Gate</div>
+        <div class="stage-desc">
+          Unlike square roots, cube root units are uniquely 1-to-1! Only 2 and 3 flip with their 10-complements.
+        </div>
+        <div class="flip-gate-box" id="flipGateBox">
+          <!-- Injected via cbrt-perfect.js -->
+        </div>
+      </div>
+
+      <!-- Stage 3: Cube Staircase Lookup for Tens Digit -->
+      <div class="stage-card">
+        <div class="stage-title">Stage 3 // Prefix Cube Staircase Lookup</div>
+        <div class="stage-desc">Find largest a such that a&sup3; &le; Thousands Prefix.</div>
+        <div class="staircase-track" id="staircaseTrack">
+          <!-- Injected via cbrt-perfect.js -->
+        </div>
+      </div>
+
+      <!-- Bijection Reference -->
+      <div class="bijection-card">
+        <div class="bijection-title">Unit Digit Bijection Table</div>
+        <div class="bijection-grid">
+          <div class="b-item self">0 &rarr; 0</div>
+          <div class="b-item self">1 &rarr; 1</div>
+          <div class="b-item flip">2 &harr; 8</div>
+          <div class="b-item flip">3 &harr; 7</div>
+          <div class="b-item self">4 &rarr; 4</div>
+          <div class="b-item self">5 &rarr; 5</div>
+          <div class="b-item self">6 &rarr; 6</div>
+          <div class="b-item flip">7 &harr; 3</div>
+          <div class="b-item flip">8 &harr; 2</div>
+          <div class="b-item self">9 &rarr; 9</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Challenge Modal -->
+  <div id="challengeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>&#127918; Cube Root Sprint</h3>
+        <button id="closeChallenge" class="close-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-bar">
+          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Time Left: <strong id="timerVal">15s</strong></div>
+        </div>
+        <div class="prompt-box">
+          What is the cube root:
+          <div id="targetPrompt" class="big-prompt">&#8731;314,432</div>
+        </div>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="cbrt-perfect.js"></script>
+</body>
+</html>

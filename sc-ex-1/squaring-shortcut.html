@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03 // Squaring Shortcut: (a+d)(a-d) + d² | Exhibition Arcade</title>
+  <meta name="description" content="Interactive 2D geometric canvas proof and morph animation for the mental math squaring identity a² = (a+d)(a-d) + d²." />
+  <link rel="stylesheet" href="squaring-shortcut.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">&larr; Exhibition Hub</a>
+      <span class="mod-badge">03 // VEDIC ALGEBRA</span>
+      <h1 class="mod-title">Squaring Shortcut: (a+d)(a&minus;d) + d&sup2;</h1>
+    </div>
+    <div class="top-controls">
+      <select id="quickNav" class="nav-select">
+        <option value="" disabled>Jump to Module...</option>
+        <option value="mirror-clock.html">01 // Mirror Clock</option>
+        <option value="calendar-mod7.html">02 // Calendar Mod-7</option>
+        <option value="squaring-shortcut.html" selected>03 // Squaring Shortcut</option>
+        <option value="sqrt-perfect.html">04 // Perfect Square Roots</option>
+        <option value="newton-sqrt.html">05 // Newton-Raphson Sqrt</option>
+        <option value="cbrt-perfect.html">06 // Perfect Cube Roots</option>
+        <option value="rule-72-110.html">07 // Rule of 72 &amp; 110</option>
+        <option value="mod9-checksum.html">08 // Mod-9 Checksums</option>
+      </select>
+      <button id="soundToggle" class="pill-btn"><span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span></button>
+      <button id="autoDemoBtn" class="pill-btn neon-btn">Auto-Demo: OFF</button>
+      <button id="challengeBtn" class="pill-btn challenge-btn">&#127918; Squaring Duel</button>
+    </div>
+  </nav>
+
+  <main class="layout">
+    <!-- Left Column: Geometric Morphing Canvas -->
+    <section class="glass-panel canvas-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <h2>Geometric Strip Slicing Proof</h2>
+          <span class="hint">Watch the strip of width d detach, rotate 90&deg;, and snap below</span>
+        </div>
+        <div class="morph-state" id="morphStateLabel">Stage: Square a&sup2;</div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="morphCanvas"></canvas>
+      </div>
+
+      <!-- Scrubber & Playback Controls -->
+      <div class="playback-bar">
+        <button id="playBtn" class="ctrl-btn">&#9654; Play Morph</button>
+        <div class="slider-wrap">
+          <label><span>Morph Progress</span><strong id="progressVal">0%</strong></label>
+          <input type="range" id="progressSlider" min="0" max="100" value="0" />
+        </div>
+        <button id="resetBtn" class="ctrl-btn secondary">&#8635; Reset</button>
+      </div>
+
+      <!-- Number Input & Presets -->
+      <div class="number-ctrl-card">
+        <div class="input-row">
+          <div class="field-item">
+            <label for="numSlider">Number to Square (a)</label>
+            <div class="slider-val-row">
+              <input type="range" id="numSlider" min="11" max="119" value="97" />
+              <strong id="aDisplay" class="big-num">97</strong>
+            </div>
+          </div>
+          <div class="field-item small">
+            <label>Deviation (d)</label>
+            <strong id="dDisplay" class="d-badge">&plusmn;3</strong>
+          </div>
+        </div>
+
+        <div class="preset-strip">
+          <span class="preset-label">Quick Numbers:</span>
+          <button class="preset-chip" data-val="97">97 (d=3)</button>
+          <button class="preset-chip" data-val="104">104 (d=4)</button>
+          <button class="preset-chip" data-val="48">48 (d=2)</button>
+          <button class="preset-chip" data-val="23">23 (d=3)</button>
+          <button class="preset-chip" data-val="89">89 (d=1)</button>
+          <button class="preset-chip" data-val="65">65 (d=5)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Step-by-Step Mental Math Breakdown -->
+    <section class="glass-panel math-panel">
+      <div class="panel-header">
+        <h2>Mental Vedic Choreography</h2>
+        <span class="badge-formula">a&sup2; = (a + d)(a &minus; d) + d&sup2;</span>
+      </div>
+
+      <!-- Dynamic Step-by-step Card Track -->
+      <div class="steps-flow" id="stepsFlow">
+        <!-- Injected via squaring-shortcut.js -->
+      </div>
+
+      <!-- Visual Algebraic Breakdown -->
+      <div class="algebra-card">
+        <div class="algebra-title">Why does this always work?</div>
+        <p class="algebra-text">
+          Algebraically, <strong>(a + d)(a &minus; d) = a&sup2; &minus; d&sup2;</strong>. Therefore, adding <strong>d&sup2;</strong> back recovers <strong>a&sup2;</strong> perfectly!
+        </p>
+        <p class="algebra-sub">
+          By picking <strong>d</strong> so that <strong>(a + d)</strong> or <strong>(a &minus; d)</strong> hits a round decade (like 100 or 50), multi-digit multiplication reduces to a single-digit mental calculation plus adding <strong>d&sup2;</strong>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Challenge Modal -->
+  <div id="challengeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>&#127918; Lightning Squaring Duel</h3>
+        <button id="closeChallenge" class="close-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-bar">
+          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Time Left: <strong id="timerVal">20s</strong></div>
+        </div>
+        <div class="prompt-box">
+          Calculate:
+          <div id="targetSquare" class="big-target">97&sup2;</div>
+        </div>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="squaring-shortcut.js"></script>
+</body>
+</html>

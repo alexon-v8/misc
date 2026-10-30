@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01 // 3D Mirror Clock &amp; Angle Protractor | Exhibition Arcade</title>
+  <meta name="description" content="3D WebGL analog clock reflection symmetry, 11:60 and 18:30 subtraction machines, and live |30H - 5.5M| hand angle protractor." />
+  <link rel="stylesheet" href="mirror-clock.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">&larr; Exhibition Hub</a>
+      <span class="mod-badge">01 // GEOMETRY</span>
+      <h1 class="mod-title">3D Mirror Clock &amp; Hand Angle Protractor</h1>
+    </div>
+    <div class="top-controls">
+      <select id="quickNav" class="nav-select" title="Jump to Module">
+        <option value="" disabled selected>Jump to Module...</option>
+        <option value="mirror-clock.html" selected>01 // Mirror Clock</option>
+        <option value="calendar-mod7.html">02 // Calendar Mod-7</option>
+        <option value="squaring-shortcut.html">03 // Squaring Shortcut</option>
+        <option value="sqrt-perfect.html">04 // Perfect Square Roots</option>
+        <option value="newton-sqrt.html">05 // Newton-Raphson Sqrt</option>
+        <option value="cbrt-perfect.html">06 // Perfect Cube Roots</option>
+        <option value="rule-72-110.html">07 // Rule of 72 &amp; 110</option>
+        <option value="mod9-checksum.html">08 // Mod-9 Checksums</option>
+      </select>
+      <button id="soundToggle" class="pill-btn"><span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span></button>
+      <button id="autoDemoBtn" class="pill-btn neon-btn">Auto-Demo: OFF</button>
+      <button id="challengeBtn" class="pill-btn challenge-btn">&#127918; Angle Sniper</button>
+    </div>
+  </nav>
+
+  <main class="layout">
+    <!-- Left Column: 3D Stage & Controls -->
+    <section class="glass-panel main-stage">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <h2>3D WebGL Symmetry Stage</h2>
+          <span class="hint">Drag to orbit &bull; Cyan: Real Time &bull; Purple: Reflection</span>
+        </div>
+        <div class="mode-toggles">
+          <button id="verticalBtn" class="mode-pill active">Vertical Mirror (11:60)</button>
+          <button id="waterBtn" class="mode-pill">Horizontal Water (18:30)</button>
+        </div>
+      </div>
+
+      <div id="threeBox" class="canvas-3d"></div>
+
+      <div class="controls-grid">
+        <div class="slider-card">
+          <div class="label-row">
+            <span>Hour Hand (H)</span>
+            <strong id="hVal" class="val-badge">3</strong>
+          </div>
+          <input type="range" id="hSlider" min="1" max="12" value="3" />
+          <div class="ticks"><span>1</span><span>3</span><span>6</span><span>9</span><span>12</span></div>
+        </div>
+
+        <div class="slider-card">
+          <div class="label-row">
+            <span>Minute Hand (M)</span>
+            <strong id="mVal" class="val-badge">40</strong>
+          </div>
+          <input type="range" id="mSlider" min="0" max="59" value="40" />
+          <div class="ticks"><span>0</span><span>15</span><span>30</span><span>45</span><span>59</span></div>
+        </div>
+      </div>
+
+      <div class="preset-strip">
+        <span class="preset-label">Presets:</span>
+        <button class="preset-chip" data-h="3" data-m="40">3:40</button>
+        <button class="preset-chip" data-h="9" data-m="15">9:15</button>
+        <button class="preset-chip" data-h="6" data-m="30">6:30</button>
+        <button class="preset-chip" data-h="12" data-m="0">12:00</button>
+        <button class="preset-chip" data-h="7" data-m="24">7:24</button>
+      </div>
+    </section>
+
+    <!-- Right Column: Mathematical Choreography & Radar Protractor -->
+    <section class="glass-panel math-stage">
+      <div class="panel-header">
+        <h2>Choreographed Digit Engines</h2>
+        <span class="badge-formula">&theta; = |30H &minus; 5.5M|</span>
+      </div>
+
+      <!-- Reflection Subtraction Machine -->
+      <div class="engine-box">
+        <div class="engine-title">
+          <span class="tag-accent" id="axisTag">Vertical Mirror Subtraction</span>
+          <span class="info-tooltip" id="axisFormula">Formula: 11:60 &minus; H:M</span>
+        </div>
+        <div id="mirrorStage" class="digit-track">
+          <!-- Dynamic cards injected via JS -->
+        </div>
+        <div class="rule-explainer" id="ruleExplainer">
+          Standard vertical mirror flips the horizontal X-axis. Subtract minutes from 60 and hours from 11 (or 12:00 for exact hours).
+        </div>
+      </div>
+
+      <!-- Exact Hand Angle Engine -->
+      <div class="engine-box">
+        <div class="engine-title">
+          <span class="tag-accent">Exact Angular Separation</span>
+          <span class="info-tooltip">Hour speed = 0.5&deg;/min &bull; Minute speed = 6&deg;/min</span>
+        </div>
+        <div id="angleStage" class="digit-track">
+          <!-- Dynamic cards injected via JS -->
+        </div>
+      </div>
+
+      <!-- 2D Canvas Radar Protractor -->
+      <div class="radar-box">
+        <div class="radar-header">
+          <span>Angular Radar Protractor</span>
+          <span id="angleSummary" class="angle-highlight">Inner: 130.0&deg;</span>
+        </div>
+        <canvas id="radarCanvas"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <!-- Challenge Mode Modal -->
+  <div id="challengeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>&#127918; Angle Sniper Challenge</h3>
+        <button id="closeChallenge" class="close-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-bar">
+          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Time Left: <strong id="timerVal">20s</strong></div>
+        </div>
+        <div class="prompt-box">
+          What is the angle between clock hands at:
+          <div id="targetTime" class="big-time">8:20</div>
+        </div>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="mirror-clock.js"></script>
+</body>
+</html>

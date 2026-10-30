@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04 // Perfect Square Roots (&radic;N) | Exhibition Arcade</title>
+  <meta name="description" content="Laser digit-splitter, unit-digit cycle wheel, and animated mechanical balance scale comparing prefix vs t(t+1) for mental square root determination." />
+  <link rel="stylesheet" href="sqrt-perfect.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="top-left">
+      <a href="index.html" class="back-btn">&larr; Exhibition Hub</a>
+      <span class="mod-badge">04 // VEDIC</span>
+      <h1 class="mod-title">Perfect Square Roots: Laser Splitter &amp; Balance Scale</h1>
+    </div>
+    <div class="top-controls">
+      <select id="quickNav" class="nav-select">
+        <option value="" disabled>Jump to Module...</option>
+        <option value="mirror-clock.html">01 // Mirror Clock</option>
+        <option value="calendar-mod7.html">02 // Calendar Mod-7</option>
+        <option value="squaring-shortcut.html">03 // Squaring Shortcut</option>
+        <option value="sqrt-perfect.html" selected>04 // Perfect Square Roots</option>
+        <option value="newton-sqrt.html">05 // Newton-Raphson Sqrt</option>
+        <option value="cbrt-perfect.html">06 // Perfect Cube Roots</option>
+        <option value="rule-72-110.html">07 // Rule of 72 &amp; 110</option>
+        <option value="mod9-checksum.html">08 // Mod-9 Checksums</option>
+      </select>
+      <button id="soundToggle" class="pill-btn"><span class="icon">&volume-high;</span> <span id="soundLabel">Audio: ON</span></button>
+      <button id="autoDemoBtn" class="pill-btn neon-btn">Auto-Demo: OFF</button>
+      <button id="challengeBtn" class="pill-btn challenge-btn">&#127918; Root Duel</button>
+    </div>
+  </nav>
+
+  <main class="layout">
+    <!-- Left Column: Laser Splitter & Mechanical Balance Scale -->
+    <section class="glass-panel main-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <h2>Laser Digit Splitter</h2>
+          <span class="hint">Separates Last 2 Digits (Units engine) from Prefix (Tens bracket)</span>
+        </div>
+        <div id="rootResultBadge" class="root-badge">&radic;5776 = 76</div>
+      </div>
+
+      <!-- Laser Splitter Chamber -->
+      <div class="splitter-chamber">
+        <div class="digit-box prefix-box">
+          <span class="box-label">PREFIX (Tens Bracket)</span>
+          <span id="prefixVal" class="big-digit">57</span>
+        </div>
+        <div class="laser-beam-wrap">
+          <div class="laser-beam"></div>
+          <span class="laser-tag">SPLIT</span>
+        </div>
+        <div class="digit-box unit-box">
+          <span class="box-label">LAST 2 DIGITS</span>
+          <span id="suffixVal" class="big-digit">76</span>
+        </div>
+      </div>
+
+      <!-- Animated Balance Scale Canvas -->
+      <div class="scale-section">
+        <div class="scale-header">
+          <span>Mechanical Balance Scale Decision</span>
+          <span id="scaleDecision" class="decision-tag">Prefix 57 &gt; 7&times;8 (56) &rarr; Tilt Right (Choose 6)</span>
+        </div>
+        <div class="scale-canvas-wrap">
+          <canvas id="scaleCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Number Input & Presets -->
+      <div class="input-card">
+        <div class="input-row">
+          <label for="squareSelect">Choose a Perfect Square (N = x&sup2;):</label>
+          <select id="squareSelect" class="styled-select">
+            <option value="5776" selected>5776 (Root = 76)</option>
+            <option value="7921">7921 (Root = 89)</option>
+            <option value="3136">3136 (Root = 56)</option>
+            <option value="9604">9604 (Root = 98)</option>
+            <option value="2916">2916 (Root = 54)</option>
+            <option value="12544">12544 (Root = 112)</option>
+            <option value="4096">4096 (Root = 64)</option>
+            <option value="5184">5184 (Root = 72)</option>
+            <option value="1849">1849 (Root = 43)</option>
+            <option value="7396">7396 (Root = 86)</option>
+          </select>
+        </div>
+        <div class="preset-strip">
+          <span class="preset-label">Test Numbers:</span>
+          <button class="preset-chip" data-n="5776">5776</button>
+          <button class="preset-chip" data-n="7921">7921</button>
+          <button class="preset-chip" data-n="3136">3136</button>
+          <button class="preset-chip" data-n="9604">9604</button>
+          <button class="preset-chip" data-n="12544">12544</button>
+          <button class="preset-chip" data-n="4096">4096</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Vedic Deduction & Unit Wheel -->
+    <section class="glass-panel math-panel">
+      <div class="panel-header">
+        <h2>Vedic Deduction Engine</h2>
+        <span class="badge-formula">Prefix vs t(t+1)</span>
+      </div>
+
+      <!-- Stage 1: Tens Bracket -->
+      <div class="stage-card">
+        <div class="stage-title">Stage 1 // Lock the Tens Digit (t)</div>
+        <div class="stage-desc">Find largest integer t such that t&sup2; &le; Prefix.</div>
+        <div class="stage-track" id="tensTrack">
+          <!-- Injected via sqrt-perfect.js -->
+        </div>
+      </div>
+
+      <!-- Stage 2: Unit Candidates -->
+      <div class="stage-card">
+        <div class="stage-title">Stage 2 // Unit Digit Cycle Filter</div>
+        <div class="stage-desc">The terminal digit maps to exactly 1 or 2 possible root units.</div>
+        <div class="stage-track" id="unitsTrack">
+          <!-- Injected via sqrt-perfect.js -->
+        </div>
+      </div>
+
+      <!-- Stage 3: The Benchmark Scale Test -->
+      <div class="stage-card highlight">
+        <div class="stage-title">Stage 3 // The t(t+1) Balance Test</div>
+        <div class="stage-desc">Multiply tens digit t by (t+1) to resolve the candidate ambiguity.</div>
+        <div class="stage-track" id="benchmarkTrack">
+          <!-- Injected via sqrt-perfect.js -->
+        </div>
+      </div>
+
+      <!-- Unit Cycle Reference -->
+      <div class="unit-ref-grid">
+        <div class="ref-col">
+          <strong>Ending in:</strong>
+          <span>1 &rarr; 1 or 9<br/>4 &rarr; 2 or 8<br/>5 &rarr; 5</span>
+        </div>
+        <div class="ref-col">
+          <strong>Ending in:</strong>
+          <span>6 &rarr; 4 or 6<br/>9 &rarr; 3 or 7<br/>0 &rarr; 0</span>
+        </div>
+        <div class="ref-col">
+          <strong>Rule:</strong>
+          <span>Pairs always sum to 10! (1+9, 2+8, 3+7, 4+6)</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Challenge Modal -->
+  <div id="challengeModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>&#127918; Square Root Duel</h3>
+        <button id="closeChallenge" class="close-x">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-bar">
+          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Time Left: <strong id="timerVal">20s</strong></div>
+        </div>
+        <div class="prompt-box">
+          What is the square root:
+          <div id="targetPrompt" class="big-prompt">&radic;5776</div>
+        </div>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="sqrt-perfect.js"></script>
+</body>
+</html>
