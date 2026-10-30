@@ -57,6 +57,7 @@ class SoundEngine {
       setTimeout(() => this.tone(f, "sine", 0.15, 0.12), i * 55);
     });
   }
+  launch() { this.tone(520, "sine", 0.12, 0.1); }
   lose() { this.tone(180, "sawtooth", 0.22, 0.14); }
 }
 const audio = new SoundEngine();
@@ -170,14 +171,50 @@ const hub = new THREE.Mesh(
 );
 gearGroup.add(hub);
 
-// Orbit & Drag
-let isDragging = false, prevX = 0, targetRotationY = 0, currentRotationY = 0;
-box.addEventListener("pointerdown", e => { isDragging = true; prevX = e.clientX; });
-window.addEventListener("pointerup", () => isDragging = false);
-window.addEventListener("pointermove", e => {
-  if (!isDragging) return;
-  targetRotationY += (e.clientX - prevX) * 0.008;
+// Orbit & Translate Controls
+let isPointerDown = false, pointerButton = 0, prevX = 0, prevY = 0;
+let panX = 0, panY = 0, rotY = 0, rotX = 0, camZ = 5.8;
+
+box.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
   prevX = e.clientX;
+  prevY = e.clientY;
+  try { box.setPointerCapture(e.pointerId); } catch(err) {}
+});
+
+box.addEventListener("pointermove", e => {
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // Middle button / wheel pressed -> ORBIT
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    rotY += dx * 0.008;
+    rotX = Math.max(-0.8, Math.min(0.8, rotX + dy * 0.008));
+  } else {
+    // Left drag -> TRANSLATE
+    panX += dx * 0.008;
+    panY -= dy * 0.008;
+  }
+});
+
+box.addEventListener("pointerup", e => {
+  isPointerDown = false;
+  try { box.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+box.addEventListener("wheel", e => {
+  e.preventDefault();
+  camZ = Math.max(3.0, Math.min(12, camZ + e.deltaY * 0.005));
+  camera.position.z = camZ;
+}, { passive: false });
+
+box.addEventListener("dblclick", () => {
+  panX = 0; panY = 0; rotY = 0; rotX = 0; camZ = 5.8;
+  camera.position.set(0, 1.2, 5.8);
 });
 
 // --- DATE CALCULATION & VAPORIZER ENGINE ---
@@ -333,10 +370,10 @@ window.addEventListener("resize", () => {
 
 function animate() {
   requestAnimationFrame(animate);
-  if (!isDragging) {
-    // Gentle floating bob
-    world.position.y = Math.sin(Date.now() * 0.0015) * 0.04;
-  }
+  world.position.x = panX;
+  world.position.y = panY + (isPointerDown ? 0 : Math.sin(Date.now() * 0.0015) * 0.04);
+  world.rotation.y = rotY;
+  world.rotation.x = rotX;
   renderer.render(scene, camera);
 }
 animate();
@@ -388,10 +425,12 @@ const challengeModal = document.getElementById("challengeModal");
 const closeChallenge = document.getElementById("closeChallenge");
 const streakCount = document.getElementById("streakCount");
 const timerVal = document.getElementById("timerVal");
+const timerBar = document.getElementById("timerBar");
 const targetDatePrompt = document.getElementById("targetDatePrompt");
-const optionsGrid7 = document.getElementById("optionsGrid7");
+const optionsGrid = document.getElementById("optionsGrid");
+const quizFeedback = document.getElementById("quizFeedback");
 
-let streak = 0, timeLeft = 25, quizTimer = null, correctDayIndex = 0;
+let streak = 0, timeLeft = 20, quizTimer = null, correctDayIndex = 0;
 
 challengeBtn.addEventListener("click", () => {
   challengeModal.style.display = "grid";
@@ -408,11 +447,13 @@ closeChallenge.addEventListener("click", () => {
 
 function startNextQuiz() {
   if (quizTimer) clearInterval(quizTimer);
-  timeLeft = 25;
+  timeLeft = 20;
   timerVal.textContent = timeLeft + "s";
+  if (timerBar) timerBar.style.width = "100%";
+  if (quizFeedback) quizFeedback.textContent = "";
 
-  // Pick random date between 1970 and 2030
-  const qYear = Math.floor(Math.random() * 60) + 1970;
+  // Pick random date between 1950 and 2050
+  const qYear = Math.floor(Math.random() * 100) + 1950;
   const qMonth = Math.floor(Math.random() * 12);
   const qDay = Math.floor(Math.random() * 28) + 1;
 
@@ -423,40 +464,82 @@ function startNextQuiz() {
   const padD = String(qDay).padStart(2, "0");
   targetDatePrompt.textContent = `${qYear}-${padM}-${padD}`;
 
-  optionsGrid7.innerHTML = "";
-  DAYS.forEach((dName, idx) => {
+  // Deterministically select 3 distinct distractor days
+  const otherDays = [0, 1, 2, 3, 4, 5, 6].filter(d => d !== correctDayIndex);
+  otherDays.sort(() => Math.random() - 0.5);
+  const chosenDistractors = otherDays.slice(0, 3);
+  const allOpts = [correctDayIndex, ...chosenDistractors].sort(() => Math.random() - 0.5);
+
+  optionsGrid.innerHTML = "";
+  allOpts.forEach((dayIdx, idx) => {
     const btn = document.createElement("button");
-    btn.className = "quiz-day-btn";
-    btn.textContent = dName;
-    btn.addEventListener("click", () => checkQuiz(idx));
-    optionsGrid7.appendChild(btn);
+    btn.className = "quiz-btn";
+    btn.setAttribute("data-day", dayIdx);
+    btn.innerHTML = `<span class="key-badge">${idx + 1}</span> ${DAYS[dayIdx]}`;
+    btn.addEventListener("click", () => handleQuizAnswer(dayIdx, btn));
+    optionsGrid.appendChild(btn);
   });
 
+  const totalTime = 20;
   quizTimer = setInterval(() => {
     timeLeft--;
     timerVal.textContent = timeLeft + "s";
+    if (timerBar) {
+      const pct = Math.max(0, (timeLeft / totalTime) * 100);
+      timerBar.style.width = `${pct}%`;
+    }
     if (timeLeft <= 0) {
       clearInterval(quizTimer);
-      audio.lose();
-      alert(`Time up! The correct day was ${DAYS[correctDayIndex]}`);
-      startNextQuiz();
+      handleQuizTimeout();
     }
   }, 1000);
 }
 
-function checkQuiz(choiceIdx) {
+function handleQuizAnswer(selectedIdx, btn) {
   clearInterval(quizTimer);
-  if (choiceIdx === correctDayIndex) {
-    audio.win();
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => b.disabled = true);
+
+  if (selectedIdx === correctDayIndex) {
+    btn.classList.add("correct");
     streak++;
     streakCount.textContent = streak;
-    optionsGrid7.innerHTML = `<div style="grid-column: 1/-1; color: #4ade80; font-weight: bold; font-size: 1.15rem; text-align: center;">Correct! +1 Streak</div>`;
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-pass">&#10004; Correct! +1 Streak</span>`;
+    audio.win();
     setTimeout(startNextQuiz, 900);
   } else {
-    audio.lose();
-    optionsGrid7.innerHTML = `<div style="grid-column: 1/-1; color: #f43f5e; font-weight: bold; font-size: 1.15rem; text-align: center;">Incorrect! It was ${DAYS[correctDayIndex]}</div>`;
+    btn.classList.add("wrong");
+    btns.forEach(b => {
+      if (+b.getAttribute("data-day") === correctDayIndex) b.classList.add("correct");
+    });
     streak = 0;
     streakCount.textContent = streak;
-    setTimeout(startNextQuiz, 1400);
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#10008; Incorrect! It was ${DAYS[correctDayIndex]}</span>`;
+    audio.lose();
+    setTimeout(startNextQuiz, 1500);
   }
 }
+
+function handleQuizTimeout() {
+  streak = 0;
+  streakCount.textContent = streak;
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => {
+    b.disabled = true;
+    if (+b.getAttribute("data-day") === correctDayIndex) b.classList.add("correct");
+  });
+  if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#9200; Time's up! It was ${DAYS[correctDayIndex]}</span>`;
+  audio.lose();
+  setTimeout(startNextQuiz, 1500);
+}
+
+// Keyboard shortcuts (1, 2, 3, 4, Esc)
+window.addEventListener("keydown", e => {
+  if (challengeModal.style.display !== "grid") return;
+  if (["1", "2", "3", "4"].includes(e.key)) {
+    const btns = optionsGrid.querySelectorAll(".quiz-btn");
+    const idx = parseInt(e.key) - 1;
+    if (btns[idx] && !btns[idx].disabled) btns[idx].click();
+  }
+  if (e.key === "Escape") closeChallenge.click();
+});

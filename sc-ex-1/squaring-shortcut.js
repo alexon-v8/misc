@@ -41,6 +41,7 @@ class SoundEngine {
       setTimeout(() => this.tone(f, "sine", 0.15, 0.12), i * 55);
     });
   }
+  launch() { this.tone(520, "sine", 0.12, 0.1); }
   lose() { this.tone(175, "sawtooth", 0.22, 0.14); }
 }
 const audio = new SoundEngine();
@@ -157,6 +158,53 @@ function updateStepCards() {
   `;
 }
 
+// --- MOUSE TRANSLATE, ORBIT/TILT & ZOOM CONTROLS ---
+let isPointerDown = false, pointerButton = 0, prevX = 0, prevY = 0;
+let panX = 0, panY = 0, zoomScale = 1, tiltAngle = 0;
+
+cvs.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
+  prevX = e.clientX;
+  prevY = e.clientY;
+  try { cvs.setPointerCapture(e.pointerId); } catch(err) {}
+});
+
+cvs.addEventListener("pointermove", e => {
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // Middle click / wheel-drag -> orbit/tilt around center
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    tiltAngle += dx * 0.005;
+  } else {
+    // Left drag -> translate scene
+    panX += dx;
+    panY += dy;
+  }
+  drawScene();
+});
+
+cvs.addEventListener("pointerup", e => {
+  isPointerDown = false;
+  try { cvs.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+cvs.addEventListener("wheel", e => {
+  e.preventDefault();
+  const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+  zoomScale = Math.max(0.5, Math.min(3.0, zoomScale * zoomFactor));
+  drawScene();
+}, { passive: false });
+
+cvs.addEventListener("dblclick", () => {
+  panX = 0; panY = 0; zoomScale = 1; tiltAngle = 0;
+  drawScene();
+});
+
 function drawScene() {
   const dpr = window.devicePixelRatio || 1;
   const w = cvs.clientWidth, h = cvs.clientHeight;
@@ -178,6 +226,13 @@ function drawScene() {
   else if (t < 0.65) morphStateLabel.textContent = `Stage: Strip of width d (${dVal}) Detached & Rotating`;
   else if (t < 0.9) morphStateLabel.textContent = `Stage: Snapped to (${aVal}+${dVal})×(${aVal}-${dVal}) Rectangle`;
   else morphStateLabel.textContent = `Stage: + Corner Square d² (${dVal}²=${dVal*dVal}) Locked`;
+
+  ctx.save();
+  // Apply scene translation, zoom, tilt
+  ctx.translate(cx + panX, cy + panY);
+  ctx.scale(zoomScale, zoomScale);
+  ctx.rotate(tiltAngle);
+  ctx.translate(-cx, -cy);
 
   // 1. Static Left Body: (a - d) x a
   ctx.save();
@@ -274,6 +329,8 @@ function drawScene() {
     ctx.fillText(`d²=${dVal*dVal}`, cornerX + dSize / 2, cornerY + dSize / 2 + 4);
     ctx.restore();
   }
+
+  ctx.restore(); // restore scene transform
 }
 
 // Scrubber events
@@ -384,8 +441,10 @@ const challengeModal = document.getElementById("challengeModal");
 const closeChallenge = document.getElementById("closeChallenge");
 const streakCount = document.getElementById("streakCount");
 const timerVal = document.getElementById("timerVal");
+const timerBar = document.getElementById("timerBar");
 const targetSquare = document.getElementById("targetSquare");
 const optionsGrid = document.getElementById("optionsGrid");
+const quizFeedback = document.getElementById("quizFeedback");
 
 let streak = 0, timeLeft = 20, quizTimer = null, currentTargetNum = 97, correctResult = 0;
 
@@ -406,6 +465,8 @@ function startNextQuiz() {
   if (quizTimer) clearInterval(quizTimer);
   timeLeft = 20;
   timerVal.textContent = timeLeft + "s";
+  if (timerBar) timerBar.style.width = "100%";
+  if (quizFeedback) quizFeedback.textContent = "";
 
   // Pick numbers close to decades for fast mental math
   const candidates = [98, 97, 96, 95, 94, 102, 103, 104, 49, 51, 24, 25, 26, 89, 91];
@@ -413,47 +474,92 @@ function startNextQuiz() {
   targetSquare.textContent = `${currentTargetNum}²`;
   correctResult = currentTargetNum * currentTargetNum;
 
-  const opts = new Set([correctResult]);
-  while (opts.size < 4) {
-    const offset = (Math.floor(Math.random() * 5) - 2) * 10 + (Math.random() > 0.5 ? 9 : -9);
-    opts.add(Math.abs(correctResult + offset));
+  // Deterministically generate 3 distinct plausible distractors
+  const candidateDeltas = [20, -20, 100, -100, 40, -40, 10, -10, 30, -30];
+  const distSet = new Set();
+  for (const d of candidateDeltas) {
+    const cand = Math.abs(correctResult + d);
+    if (cand !== correctResult) distSet.add(cand);
+    if (distSet.size >= 3) break;
   }
-  const shuffled = Array.from(opts).sort(() => Math.random() - 0.5);
+  let fallback = 50;
+  while (distSet.size < 3) {
+    distSet.add(correctResult + fallback);
+    fallback += 20;
+  }
+
+  const allOpts = [correctResult, ...Array.from(distSet)].sort(() => Math.random() - 0.5);
 
   optionsGrid.innerHTML = "";
-  shuffled.forEach(ans => {
+  allOpts.forEach((ans, idx) => {
     const btn = document.createElement("button");
     btn.className = "quiz-btn";
-    btn.textContent = ans;
-    btn.addEventListener("click", () => checkQuiz(ans));
+    btn.setAttribute("data-ans", ans);
+    btn.innerHTML = `<span class="key-badge">${idx + 1}</span> ${ans}`;
+    btn.addEventListener("click", () => handleQuizAnswer(ans, btn));
     optionsGrid.appendChild(btn);
   });
 
+  const totalTime = 20;
   quizTimer = setInterval(() => {
     timeLeft--;
     timerVal.textContent = timeLeft + "s";
+    if (timerBar) {
+      const pct = Math.max(0, (timeLeft / totalTime) * 100);
+      timerBar.style.width = `${pct}%`;
+    }
     if (timeLeft <= 0) {
       clearInterval(quizTimer);
-      audio.lose();
-      alert(`Time up! ${currentTargetNum}² = ${correctResult}`);
-      startNextQuiz();
+      handleQuizTimeout();
     }
   }, 1000);
 }
 
-function checkQuiz(choice) {
+function handleQuizAnswer(choice, btn) {
   clearInterval(quizTimer);
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => b.disabled = true);
+
   if (choice === correctResult) {
-    audio.win();
+    btn.classList.add("correct");
     streak++;
     streakCount.textContent = streak;
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #4ade80; font-weight: bold; font-size: 1.15rem; text-align: center;">Correct! +1 Streak</div>`;
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-pass">&#10004; Correct! +1 Streak</span>`;
+    audio.win();
     setTimeout(startNextQuiz, 900);
   } else {
-    audio.lose();
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #f43f5e; font-weight: bold; font-size: 1.15rem; text-align: center;">Incorrect! Answer was ${correctResult}</div>`;
+    btn.classList.add("wrong");
+    btns.forEach(b => {
+      if (+b.getAttribute("data-ans") === correctResult) b.classList.add("correct");
+    });
     streak = 0;
     streakCount.textContent = streak;
-    setTimeout(startNextQuiz, 1400);
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#10008; Incorrect! Answer was ${correctResult}</span>`;
+    audio.lose();
+    setTimeout(startNextQuiz, 1500);
   }
 }
+
+function handleQuizTimeout() {
+  streak = 0;
+  streakCount.textContent = streak;
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => {
+    b.disabled = true;
+    if (+b.getAttribute("data-ans") === correctResult) b.classList.add("correct");
+  });
+  if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#9200; Time's up! ${currentTargetNum}² = ${correctResult}</span>`;
+  audio.lose();
+  setTimeout(startNextQuiz, 1500);
+}
+
+// Keyboard shortcuts (1, 2, 3, 4, Esc)
+window.addEventListener("keydown", e => {
+  if (challengeModal.style.display !== "grid") return;
+  if (["1", "2", "3", "4"].includes(e.key)) {
+    const btns = optionsGrid.querySelectorAll(".quiz-btn");
+    const idx = parseInt(e.key) - 1;
+    if (btns[idx] && !btns[idx].disabled) btns[idx].click();
+  }
+  if (e.key === "Escape") closeChallenge.click();
+});

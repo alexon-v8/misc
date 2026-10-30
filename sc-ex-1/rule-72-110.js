@@ -135,6 +135,50 @@ function updateMathEngine() {
   drawWheel();
 }
 
+// --- MOUSE TRANSLATE, ORBIT/TILT & ZOOM CONTROLS ---
+let isPointerDown = false, pointerButton = 0, prevX = 0, prevY = 0;
+let panX = 0, panY = 0, zoomScale = 1, tiltAngle = 0;
+
+pCvs.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
+  prevX = e.clientX;
+  prevY = e.clientY;
+  try { pCvs.setPointerCapture(e.pointerId); } catch(err) {}
+});
+
+pCvs.addEventListener("pointermove", e => {
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // Middle click / wheel-drag -> orbit/tilt around center
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    tiltAngle += dx * 0.005;
+  } else {
+    // Left drag -> translate scene
+    panX += dx;
+    panY += dy;
+  }
+});
+
+pCvs.addEventListener("pointerup", e => {
+  isPointerDown = false;
+  try { pCvs.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+pCvs.addEventListener("wheel", e => {
+  e.preventDefault();
+  const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+  zoomScale = Math.max(0.5, Math.min(3.0, zoomScale * zoomFactor));
+}, { passive: false });
+
+pCvs.addEventListener("dblclick", () => {
+  panX = 0; panY = 0; zoomScale = 1; tiltAngle = 0;
+});
+
 function renderPetriDish() {
   const dpr = window.devicePixelRatio || 1;
   const w = pCvs.clientWidth, h = pCvs.clientHeight;
@@ -144,6 +188,12 @@ function renderPetriDish() {
 
   const cx = w / 2, cy = h / 2;
   const dishR = Math.min(w, h) * 0.42;
+
+  pCtx.save();
+  pCtx.translate(cx + panX, cy + panY);
+  pCtx.scale(zoomScale, zoomScale);
+  pCtx.rotate(tiltAngle);
+  pCtx.translate(-cx, -cy);
 
   // Petri Dish Glass Rim
   const rimGrad = pCtx.createRadialGradient(cx, cy, dishR * 0.7, cx, cy, dishR);
@@ -236,6 +286,7 @@ function renderPetriDish() {
     }
   }
 
+  pCtx.restore(); // restore scene transform
   requestAnimationFrame(renderPetriDish);
 }
 
@@ -385,8 +436,10 @@ const challengeModal = document.getElementById("challengeModal");
 const closeChallenge = document.getElementById("closeChallenge");
 const streakCount = document.getElementById("streakCount");
 const timerVal = document.getElementById("timerVal");
+const timerBar = document.getElementById("timerBar");
 const targetPrompt = document.getElementById("targetPrompt");
 const optionsGrid = document.getElementById("optionsGrid");
+const quizFeedback = document.getElementById("quizFeedback");
 
 let streak = 0, timeLeft = 20, quizTimer = null, correctDoubleTime = 0;
 
@@ -407,53 +460,100 @@ function startNextQuiz() {
   if (quizTimer) clearInterval(quizTimer);
   timeLeft = 20;
   timerVal.textContent = timeLeft + "s";
+  if (timerBar) timerBar.style.width = "100%";
+  if (quizFeedback) quizFeedback.textContent = "";
 
   const rateOptions = [4, 6, 8, 9, 12, 18, 24];
   const qRate = rateOptions[Math.floor(Math.random() * rateOptions.length)];
   targetPrompt.textContent = `${qRate}% Rate → ? hrs`;
   correctDoubleTime = 72 / qRate;
 
-  const opts = new Set([`${correctDoubleTime} hrs`]);
-  while (opts.size < 4) {
-    const fake = Math.abs(correctDoubleTime + (Math.floor(Math.random() * 5) - 2) * 2);
-    if (fake > 0) opts.add(`${fake} hrs`);
+  // Generate 3 plausible distractors
+  const candidateDeltas = [2, -2, 4, -4, 3, -3, 6, -6];
+  const distSet = new Set();
+  for (const d of candidateDeltas) {
+    const cand = correctDoubleTime + d;
+    if (cand > 0 && cand !== correctDoubleTime) distSet.add(cand);
+    if (distSet.size >= 3) break;
   }
-  const shuffled = Array.from(opts).sort(() => Math.random() - 0.5);
+  let fallback = 5;
+  while (distSet.size < 3) {
+    distSet.add(correctDoubleTime + fallback);
+    fallback += 3;
+  }
+
+  const allOpts = [correctDoubleTime, ...Array.from(distSet)].sort(() => Math.random() - 0.5);
 
   optionsGrid.innerHTML = "";
-  shuffled.forEach(ans => {
+  allOpts.forEach((ans, idx) => {
     const btn = document.createElement("button");
     btn.className = "quiz-btn";
-    btn.textContent = ans;
-    btn.addEventListener("click", () => checkQuiz(parseInt(ans)));
+    btn.setAttribute("data-ans", ans);
+    btn.innerHTML = `<span class="key-badge">${idx + 1}</span> ${ans} hrs`;
+    btn.addEventListener("click", () => handleQuizAnswer(ans, btn, qRate));
     optionsGrid.appendChild(btn);
   });
 
+  const totalTime = 20;
   quizTimer = setInterval(() => {
     timeLeft--;
     timerVal.textContent = timeLeft + "s";
+    if (timerBar) {
+      const pct = Math.max(0, (timeLeft / totalTime) * 100);
+      timerBar.style.width = `${pct}%`;
+    }
     if (timeLeft <= 0) {
       clearInterval(quizTimer);
-      audio.lose();
-      alert(`Time up! At ${qRate}%, 72 / ${qRate} = ${correctDoubleTime} hrs`);
-      startNextQuiz();
+      handleQuizTimeout(qRate);
     }
   }, 1000);
 }
 
-function checkQuiz(choice) {
+function handleQuizAnswer(choice, btn, qRate) {
   clearInterval(quizTimer);
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => b.disabled = true);
+
   if (choice === correctDoubleTime) {
-    audio.win();
+    btn.classList.add("correct");
     streak++;
     streakCount.textContent = streak;
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #4ade80; font-weight: bold; font-size: 1.15rem; text-align: center;">Correct! +1 Streak</div>`;
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-pass">&#10004; Correct! +1 Streak</span>`;
+    audio.win();
     setTimeout(startNextQuiz, 900);
   } else {
-    audio.lose();
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #f43f5e; font-weight: bold; font-size: 1.15rem; text-align: center;">Incorrect! Answer was ${correctDoubleTime} hrs</div>`;
+    btn.classList.add("wrong");
+    btns.forEach(b => {
+      if (+b.getAttribute("data-ans") === correctDoubleTime) b.classList.add("correct");
+    });
     streak = 0;
     streakCount.textContent = streak;
-    setTimeout(startNextQuiz, 1400);
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#10008; Incorrect! Answer was ${correctDoubleTime} hrs</span>`;
+    audio.lose();
+    setTimeout(startNextQuiz, 1500);
   }
 }
+
+function handleQuizTimeout(qRate) {
+  streak = 0;
+  streakCount.textContent = streak;
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => {
+    b.disabled = true;
+    if (+b.getAttribute("data-ans") === correctDoubleTime) b.classList.add("correct");
+  });
+  if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#9200; Time's up! 72 / ${qRate} = ${correctDoubleTime} hrs</span>`;
+  audio.lose();
+  setTimeout(startNextQuiz, 1500);
+}
+
+// Keyboard shortcuts (1, 2, 3, 4, Esc)
+window.addEventListener("keydown", e => {
+  if (challengeModal.style.display !== "grid") return;
+  if (["1", "2", "3", "4"].includes(e.key)) {
+    const btns = optionsGrid.querySelectorAll(".quiz-btn");
+    const idx = parseInt(e.key) - 1;
+    if (btns[idx] && !btns[idx].disabled) btns[idx].click();
+  }
+  if (e.key === "Escape") closeChallenge.click();
+});

@@ -134,6 +134,53 @@ function updateSimulation() {
   drawCurve(N, a, x1, trueVal);
 }
 
+// --- MOUSE TRANSLATE, ORBIT/TILT & ZOOM CONTROLS ---
+let isPointerDown = false, pointerButton = 0, prevX = 0, prevY = 0;
+let panX = 0, panY = 0, zoomScale = 1, tiltAngle = 0;
+
+lCvs.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
+  prevX = e.clientX;
+  prevY = e.clientY;
+  try { lCvs.setPointerCapture(e.pointerId); } catch(err) {}
+});
+
+lCvs.addEventListener("pointermove", e => {
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // Middle click / wheel-drag -> orbit/tilt around center
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    tiltAngle += dx * 0.005;
+  } else {
+    // Left drag -> translate scene
+    panX += dx;
+    panY += dy;
+  }
+  updateSim();
+});
+
+lCvs.addEventListener("pointerup", e => {
+  isPointerDown = false;
+  try { lCvs.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+lCvs.addEventListener("wheel", e => {
+  e.preventDefault();
+  const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+  zoomScale = Math.max(0.5, Math.min(3.0, zoomScale * zoomFactor));
+  updateSim();
+}, { passive: false });
+
+lCvs.addEventListener("dblclick", () => {
+  panX = 0; panY = 0; zoomScale = 1; tiltAngle = 0;
+  updateSim();
+});
+
 // 2D Liquid Border Canvas
 function drawLiquidScene(a, d, stripW) {
   const dpr = window.devicePixelRatio || 1;
@@ -150,6 +197,12 @@ function drawLiquidScene(a, d, stripW) {
 
   const bx = cx - baseSize / 2;
   const by = cy - baseSize / 2;
+
+  lCtx.save();
+  lCtx.translate(cx + panX, cy + panY);
+  lCtx.scale(zoomScale, zoomScale);
+  lCtx.rotate(tiltAngle);
+  lCtx.translate(-cx, -cy);
 
   // 1. Base Square a x a
   lCtx.fillStyle = "rgba(15, 23, 42, 0.9)";
@@ -229,6 +282,8 @@ function drawLiquidScene(a, d, stripW) {
   lCtx.fillStyle = "#f43f5e";
   lCtx.fillText("CORNER GAP", magX, magY + magR + 14);
   lCtx.restore();
+
+  lCtx.restore(); // restore scene transform
 }
 
 // Tangent Curve Canvas Plot
@@ -356,8 +411,10 @@ const challengeModal = document.getElementById("challengeModal");
 const closeChallenge = document.getElementById("closeChallenge");
 const streakCount = document.getElementById("streakCount");
 const timerVal = document.getElementById("timerVal");
+const timerBar = document.getElementById("timerBar");
 const targetPrompt = document.getElementById("targetPrompt");
 const optionsGrid = document.getElementById("optionsGrid");
+const quizFeedback = document.getElementById("quizFeedback");
 
 let streak = 0, timeLeft = 20, quizTimer = null, currentApprox = 0;
 
@@ -378,56 +435,103 @@ function startNextQuiz() {
   if (quizTimer) clearInterval(quizTimer);
   timeLeft = 20;
   timerVal.textContent = timeLeft + "s";
+  if (timerBar) timerBar.style.width = "100%";
+  if (quizFeedback) quizFeedback.textContent = "";
 
   const candidates = [17, 26, 37, 50, 65, 82, 101, 38, 28, 83];
   const qN = candidates[Math.floor(Math.random() * candidates.length)];
   targetPrompt.textContent = `√${qN}`;
 
   const { a, d } = findClosestBase(qN);
-  const correct = a + d / (2 * a);
+  const correct = +(a + d / (2 * a)).toFixed(3);
   currentApprox = correct;
 
-  const opts = new Set([correct.toFixed(3)]);
-  while (opts.size < 4) {
-    const fake = correct + (Math.floor(Math.random() * 5) - 2) * 0.12;
-    opts.add(fake.toFixed(3));
+  // Generate 3 plausible distractors
+  const candidateDeltas = [0.12, -0.12, 0.25, -0.25, 0.08, -0.08];
+  const distSet = new Set();
+  for (const delta of candidateDeltas) {
+    const cand = +(correct + delta).toFixed(3);
+    if (cand > 0 && Math.abs(cand - correct) > 0.005) distSet.add(cand);
+    if (distSet.size >= 3) break;
   }
-  const shuffled = Array.from(opts).sort(() => Math.random() - 0.5);
+  let fallback = 0.15;
+  while (distSet.size < 3) {
+    distSet.add(+(correct + fallback).toFixed(3));
+    fallback += 0.1;
+  }
+
+  const allOpts = [correct, ...Array.from(distSet)].sort(() => Math.random() - 0.5);
 
   optionsGrid.innerHTML = "";
-  shuffled.forEach(ans => {
+  allOpts.forEach((ans, idx) => {
     const btn = document.createElement("button");
     btn.className = "quiz-btn";
-    btn.textContent = ans;
-    btn.addEventListener("click", () => checkQuiz(+ans));
+    btn.setAttribute("data-ans", ans);
+    btn.innerHTML = `<span class="key-badge">${idx + 1}</span> ${ans}`;
+    btn.addEventListener("click", () => handleQuizAnswer(ans, btn, qN));
     optionsGrid.appendChild(btn);
   });
 
+  const totalTime = 20;
   quizTimer = setInterval(() => {
     timeLeft--;
     timerVal.textContent = timeLeft + "s";
+    if (timerBar) {
+      const pct = Math.max(0, (timeLeft / totalTime) * 100);
+      timerBar.style.width = `${pct}%`;
+    }
     if (timeLeft <= 0) {
       clearInterval(quizTimer);
-      audio.lose();
-      alert(`Time up! √${qN} ≈ ${correct.toFixed(3)}`);
-      startNextQuiz();
+      handleQuizTimeout(qN);
     }
   }, 1000);
 }
 
-function checkQuiz(choice) {
+function handleQuizAnswer(choice, btn, qN) {
   clearInterval(quizTimer);
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => b.disabled = true);
+
   if (Math.abs(choice - currentApprox) < 0.005) {
-    audio.win();
+    btn.classList.add("correct");
     streak++;
     streakCount.textContent = streak;
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #4ade80; font-weight: bold; font-size: 1.15rem; text-align: center;">Correct! +1 Streak</div>`;
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-pass">&#10004; Correct! +1 Streak</span>`;
+    audio.win();
     setTimeout(startNextQuiz, 900);
   } else {
-    audio.lose();
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #f43f5e; font-weight: bold; font-size: 1.15rem; text-align: center;">Incorrect! Answer was ${currentApprox.toFixed(3)}</div>`;
+    btn.classList.add("wrong");
+    btns.forEach(b => {
+      if (Math.abs(+b.getAttribute("data-ans") - currentApprox) < 0.005) b.classList.add("correct");
+    });
     streak = 0;
     streakCount.textContent = streak;
-    setTimeout(startNextQuiz, 1400);
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#10008; Incorrect! Answer was ${currentApprox.toFixed(3)}</span>`;
+    audio.lose();
+    setTimeout(startNextQuiz, 1500);
   }
 }
+
+function handleQuizTimeout(qN) {
+  streak = 0;
+  streakCount.textContent = streak;
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => {
+    b.disabled = true;
+    if (Math.abs(+b.getAttribute("data-ans") - currentApprox) < 0.005) b.classList.add("correct");
+  });
+  if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#9200; Time's up! √${qN} ≈ ${currentApprox.toFixed(3)}</span>`;
+  audio.lose();
+  setTimeout(startNextQuiz, 1500);
+}
+
+// Keyboard shortcuts (1, 2, 3, 4, Esc)
+window.addEventListener("keydown", e => {
+  if (challengeModal.style.display !== "grid") return;
+  if (["1", "2", "3", "4"].includes(e.key)) {
+    const btns = optionsGrid.querySelectorAll(".quiz-btn");
+    const idx = parseInt(e.key) - 1;
+    if (btns[idx] && !btns[idx].disabled) btns[idx].click();
+  }
+  if (e.key === "Escape") closeChallenge.click();
+});

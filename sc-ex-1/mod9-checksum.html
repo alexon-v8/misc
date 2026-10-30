@@ -6,7 +6,17 @@
   <title>08 // Mod-9 Digital Roots &amp; Casting Out Nines Collider | Exhibition Arcade</title>
   <meta name="description" content="Base-10 laser block slicer, Casting Out Nines particle collider, and Multiplication Checksum X-Ray scanner for error detection." />
   <link rel="stylesheet" href="mod9-checksum.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="offline-resolver.js"></script>
+  <script>
+    (function() {
+      if (window.location.protocol === 'file:') {
+        document.write('<script src="gsap.min.js"><\/script>');
+      } else {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"><\/script>');
+        document.write('<script>window.gsap || document.write(\'<script src="gsap.min.js"><\\/script>\');<\/script>');
+      }
+    })();
+  </script>
 </head>
 <body>
   <nav class="topbar">
@@ -39,7 +49,7 @@
       <div class="panel-header">
         <div class="title-wrap">
           <h2>"Casting Out Nines" Particle Collider</h2>
-          <span class="hint">Watch digits that sum to 9 (e.g. 4+5, 7+2, 9) collide &amp; annihilate into energy sparks</span>
+          <span class="hint">Left-Drag: Translate Scene &bull; Wheel-Drag: Tilt &bull; Scroll: Zoom &bull; Dbl-Click: Reset</span>
         </div>
         <div id="drResultBadge" class="dr-badge">dr(54,927) = 9 &equiv; 0</div>
       </div>
@@ -144,8 +154,11 @@
         <button id="closeChallenge" class="close-x">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="timer-bar-wrap">
+          <div id="timerBar" class="timer-bar-fill"></div>
+        </div>
         <div class="stats-bar">
-          <div>Caught: <strong id="streakCount">0</strong></div>
+          <div>Caught: <strong id="streakCount">0</strong> &#128293;</div>
           <div>Time Left: <strong id="timerVal">20s</strong></div>
         </div>
         <div class="prompt-box">
@@ -153,9 +166,11 @@
           <div id="targetEquation" class="big-equation">487 &times; 63 = 30,681</div>
         </div>
         <div class="options-grid-2">
-          <button id="btnValid" class="detect-btn valid-btn">&#10004; Valid Calculation</button>
-          <button id="btnTampered" class="detect-btn tamper-btn">&#9888; TAMPERED / FRAUDULENT!</button>
+          <button id="btnValid" class="detect-btn valid-btn"><span class="key-badge">1</span> &#10004; Valid Calculation</button>
+          <button id="btnTampered" class="detect-btn tamper-btn"><span class="key-badge">2</span> &#9888; TAMPERED / FRAUDULENT!</button>
         </div>
+        <div id="quizFeedback" class="quiz-feedback"></div>
+        <div class="key-hints">Tip: Press keys 1 or 2 on your keyboard!</div>
       </div>
     </div>
   </div>

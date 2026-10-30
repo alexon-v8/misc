@@ -6,7 +6,17 @@
   <title>04 // Perfect Square Roots (&radic;N) | Exhibition Arcade</title>
   <meta name="description" content="Laser digit-splitter, unit-digit cycle wheel, and animated mechanical balance scale comparing prefix vs t(t+1) for mental square root determination." />
   <link rel="stylesheet" href="sqrt-perfect.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="offline-resolver.js"></script>
+  <script>
+    (function() {
+      if (window.location.protocol === 'file:') {
+        document.write('<script src="gsap.min.js"><\/script>');
+      } else {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"><\/script>');
+        document.write('<script>window.gsap || document.write(\'<script src="gsap.min.js"><\\/script>\');<\/script>');
+      }
+    })();
+  </script>
 </head>
 <body>
   <nav class="topbar">
@@ -63,7 +73,10 @@
       <!-- Animated Balance Scale Canvas -->
       <div class="scale-section">
         <div class="scale-header">
-          <span>Mechanical Balance Scale Decision</span>
+          <div class="title-wrap">
+            <span>Mechanical Balance Scale Decision</span>
+            <span class="hint">Left-Drag: Translate Scene &bull; Wheel-Drag: Tilt &bull; Scroll: Zoom &bull; Dbl-Click: Reset</span>
+          </div>
           <span id="scaleDecision" class="decision-tag">Prefix 57 &gt; 7&times;8 (56) &rarr; Tilt Right (Choose 6)</span>
         </div>
         <div class="scale-canvas-wrap">
@@ -160,8 +173,11 @@
         <button id="closeChallenge" class="close-x">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="timer-bar-wrap">
+          <div id="timerBar" class="timer-bar-fill"></div>
+        </div>
         <div class="stats-bar">
-          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Streak: <strong id="streakCount">0</strong> &#128293;</div>
           <div>Time Left: <strong id="timerVal">20s</strong></div>
         </div>
         <div class="prompt-box">
@@ -169,6 +185,8 @@
           <div id="targetPrompt" class="big-prompt">&radic;5776</div>
         </div>
         <div class="options-grid" id="optionsGrid"></div>
+        <div id="quizFeedback" class="quiz-feedback"></div>
+        <div class="key-hints">Tip: Press keys 1, 2, 3, or 4 on your keyboard!</div>
       </div>
     </div>
   </div>

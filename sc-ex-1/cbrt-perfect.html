@@ -6,8 +6,20 @@
   <title>06 // Perfect Cube Roots &amp; 3D Voxel Cube | Exhibition Arcade</title>
   <meta name="description" content="3D exploding voxel cube in Three.js representing (10a+b)³ expansion, 2↔8 and 3↔7 Unit Digit Flip Gate, and cube root mental calculations." />
   <link rel="stylesheet" href="cbrt-perfect.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="offline-resolver.js"></script>
+  <script>
+    (function() {
+      if (window.location.protocol === 'file:') {
+        document.write('<script src="three.min.js"><\/script>');
+        document.write('<script src="gsap.min.js"><\/script>');
+      } else {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        document.write('<script>window.THREE || document.write(\'<script src="three.min.js"><\\/script>\');<\/script>');
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"><\/script>');
+        document.write('<script>window.gsap || document.write(\'<script src="gsap.min.js"><\\/script>\');<\/script>');
+      }
+    })();
+  </script>
 </head>
 <body>
   <nav class="topbar">
@@ -40,7 +52,7 @@
       <div class="panel-header">
         <div class="title-wrap">
           <h2>3D (10a + b)&sup3; Exploding Voxel Cube</h2>
-          <span class="hint">1000a&sup3; (cyan) &bull; 300a&sup2;b (purple) &bull; 30ab&sup2; (pink) &bull; b&sup3; (green)</span>
+          <span class="hint">Left-Drag: Translate Scene &bull; Wheel-Drag: Orbit 3D Focus &bull; Scroll: Zoom &bull; Dbl-Click: Reset</span>
         </div>
         <div id="cbrtResultBadge" class="cbrt-badge">&#8731;314432 = 68</div>
       </div>
@@ -156,8 +168,11 @@
         <button id="closeChallenge" class="close-x">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="timer-bar-wrap">
+          <div id="timerBar" class="timer-bar-fill"></div>
+        </div>
         <div class="stats-bar">
-          <div>Streak: <strong id="streakCount">0</strong></div>
+          <div>Streak: <strong id="streakCount">0</strong> &#128293;</div>
           <div>Time Left: <strong id="timerVal">15s</strong></div>
         </div>
         <div class="prompt-box">
@@ -165,6 +180,8 @@
           <div id="targetPrompt" class="big-prompt">&#8731;314,432</div>
         </div>
         <div class="options-grid" id="optionsGrid"></div>
+        <div id="quizFeedback" class="quiz-feedback"></div>
+        <div class="key-hints">Tip: Press keys 1, 2, 3, or 4 on your keyboard!</div>
       </div>
     </div>
   </div>

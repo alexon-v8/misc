@@ -6,8 +6,20 @@
   <title>Mental Math &amp; Geometry Exhibition Arcade | Science Fair Hub</title>
   <meta name="description" content="An interactive exhibition-grade arcade of 8 3D and 2D mental math, geometry, calculus, and modular arithmetic simulations for school science exhibitions." />
   <link rel="stylesheet" href="index.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="offline-resolver.js"></script>
+  <script>
+    (function() {
+      if (window.location.protocol === 'file:') {
+        document.write('<script src="three.min.js"><\/script>');
+        document.write('<script src="gsap.min.js"><\/script>');
+      } else {
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        document.write('<script>window.THREE || document.write(\'<script src="three.min.js"><\\/script>\');<\/script>');
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"><\/script>');
+        document.write('<script>window.gsap || document.write(\'<script src="gsap.min.js"><\\/script>\');<\/script>');
+      }
+    })();
+  </script>
 </head>
 <body>
   <canvas id="particleCanvas" class="bg-canvas"></canvas>

@@ -160,15 +160,54 @@ function updateExplosion() {
 }
 updateExplosion();
 
-// Mouse/Touch Orbit
-let isDragging = false, prevX = 0, prevY = 0, rotY = 0.5, rotX = 0.3;
-box.addEventListener("pointerdown", e => { isDragging = true; prevX = e.clientX; prevY = e.clientY; });
-window.addEventListener("pointerup", () => isDragging = false);
-window.addEventListener("pointermove", e => {
-  if (!isDragging) return;
-  rotY += (e.clientX - prevX) * 0.007;
-  rotX = Math.max(-0.6, Math.min(0.6, rotX + (e.clientY - prevY) * 0.007));
-  prevX = e.clientX; prevY = e.clientY;
+// Touch & Mouse: Left-drag translates whole scene, Wheel-drag orbits around central focus
+let isPointerDown = false;
+let pointerButton = 0;
+let prevX = 0, prevY = 0;
+let panX = 0, panY = 0;
+let rotY = 0.5, rotX = 0.3;
+let camDist = 7.0;
+
+box.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
+  prevX = e.clientX;
+  prevY = e.clientY;
+  try { box.setPointerCapture(e.pointerId); } catch(err) {}
+});
+
+box.addEventListener("pointermove", e => {
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // Middle click / wheel-drag -> ORBIT
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    rotY += dx * 0.008;
+    rotX = Math.max(-0.8, Math.min(0.8, rotX + dy * 0.008));
+  } else {
+    // Left drag -> TRANSLATE whole scene
+    panX += dx * 0.008;
+    panY -= dy * 0.008;
+  }
+});
+
+box.addEventListener("pointerup", e => {
+  isPointerDown = false;
+  try { box.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+box.addEventListener("wheel", e => {
+  e.preventDefault();
+  camDist = Math.max(3.0, Math.min(15.0, camDist + e.deltaY * 0.006));
+  camera.position.setLength(camDist);
+}, { passive: false });
+
+box.addEventListener("dblclick", () => {
+  panX = 0; panY = 0; rotY = 0.5; rotX = 0.3; camDist = 7.0;
+  camera.position.set(3.5, 3.2, 5.2);
 });
 
 // --- VEDIC DEDUCTION & FLIP GATE ---
@@ -267,9 +306,11 @@ window.addEventListener("resize", () => {
 
 function animate() {
   requestAnimationFrame(animate);
-  if (!isDragging) rotY += 0.002;
-  world.rotation.y += (rotY - world.rotation.y) * 0.1;
-  world.rotation.x += (rotX - world.rotation.x) * 0.1;
+  if (!isPointerDown) rotY += 0.0015;
+  world.position.x += (panX - world.position.x) * 0.15;
+  world.position.y += (panY - world.position.y) * 0.15;
+  world.rotation.y += (rotY - world.rotation.y) * 0.12;
+  world.rotation.x += (rotX - world.rotation.x) * 0.12;
   renderer.render(scene, camera);
 }
 animate();
@@ -325,8 +366,10 @@ const challengeModal = document.getElementById("challengeModal");
 const closeChallenge = document.getElementById("closeChallenge");
 const streakCount = document.getElementById("streakCount");
 const timerVal = document.getElementById("timerVal");
+const timerBar = document.getElementById("timerBar");
 const targetPrompt = document.getElementById("targetPrompt");
 const optionsGrid = document.getElementById("optionsGrid");
+const quizFeedback = document.getElementById("quizFeedback");
 
 let streak = 0, timeLeft = 15, quizTimer = null, correctCubeRoot = 0;
 
@@ -347,53 +390,100 @@ function startNextQuiz() {
   if (quizTimer) clearInterval(quizTimer);
   timeLeft = 15;
   timerVal.textContent = timeLeft + "s";
+  if (timerBar) timerBar.style.width = "100%";
+  if (quizFeedback) quizFeedback.textContent = "";
 
   const candidates = [13, 17, 24, 27, 34, 42, 47, 56, 68, 73, 84, 93, 97];
   correctCubeRoot = candidates[Math.floor(Math.random() * candidates.length)];
   const cubeVal = Math.pow(correctCubeRoot, 3);
   targetPrompt.textContent = `∛${cubeVal.toLocaleString()}`;
 
-  const opts = new Set([correctCubeRoot]);
-  while (opts.size < 4) {
-    const fake = correctCubeRoot + (Math.floor(Math.random() * 5) - 2) * 10;
-    if (fake > 10) opts.add(fake);
+  // Deterministically generate 3 distinct plausible distractors
+  const candidateDeltas = [10, -10, 20, -20, 5, -5, 15, -15];
+  const distSet = new Set();
+  for (const d of candidateDeltas) {
+    const cand = correctCubeRoot + d;
+    if (cand > 10 && cand !== correctCubeRoot) distSet.add(cand);
+    if (distSet.size >= 3) break;
   }
-  const shuffled = Array.from(opts).sort(() => Math.random() - 0.5);
+  let fallback = 8;
+  while (distSet.size < 3) {
+    distSet.add(correctCubeRoot + fallback);
+    fallback += 6;
+  }
+
+  const allOpts = [correctCubeRoot, ...Array.from(distSet)].sort(() => Math.random() - 0.5);
 
   optionsGrid.innerHTML = "";
-  shuffled.forEach(ans => {
+  allOpts.forEach((ans, idx) => {
     const btn = document.createElement("button");
     btn.className = "quiz-btn";
-    btn.textContent = ans;
-    btn.addEventListener("click", () => checkQuiz(ans));
+    btn.setAttribute("data-ans", ans);
+    btn.innerHTML = `<span class="key-badge">${idx + 1}</span> ${ans}`;
+    btn.addEventListener("click", () => handleQuizAnswer(ans, btn));
     optionsGrid.appendChild(btn);
   });
 
+  const totalTime = 15;
   quizTimer = setInterval(() => {
     timeLeft--;
     timerVal.textContent = timeLeft + "s";
+    if (timerBar) {
+      const pct = Math.max(0, (timeLeft / totalTime) * 100);
+      timerBar.style.width = `${pct}%`;
+    }
     if (timeLeft <= 0) {
       clearInterval(quizTimer);
-      audio.lose();
-      alert(`Time up! ∛${cubeVal.toLocaleString()} = ${correctCubeRoot}`);
-      startNextQuiz();
+      handleQuizTimeout(cubeVal);
     }
   }, 1000);
 }
 
-function checkQuiz(choice) {
+function handleQuizAnswer(choice, btn) {
   clearInterval(quizTimer);
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => b.disabled = true);
+
   if (choice === correctCubeRoot) {
-    audio.win();
+    btn.classList.add("correct");
     streak++;
     streakCount.textContent = streak;
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #4ade80; font-weight: bold; font-size: 1.15rem; text-align: center;">Correct! +1 Streak</div>`;
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-pass">&#10004; Correct! +1 Streak</span>`;
+    audio.win();
     setTimeout(startNextQuiz, 900);
   } else {
-    audio.lose();
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #f43f5e; font-weight: bold; font-size: 1.15rem; text-align: center;">Incorrect! Answer was ${correctCubeRoot}</div>`;
+    btn.classList.add("wrong");
+    btns.forEach(b => {
+      if (+b.getAttribute("data-ans") === correctCubeRoot) b.classList.add("correct");
+    });
     streak = 0;
     streakCount.textContent = streak;
-    setTimeout(startNextQuiz, 1400);
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#10008; Incorrect! Answer was ${correctCubeRoot}</span>`;
+    audio.lose();
+    setTimeout(startNextQuiz, 1500);
   }
 }
+
+function handleQuizTimeout(cubeVal) {
+  streak = 0;
+  streakCount.textContent = streak;
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => {
+    b.disabled = true;
+    if (+b.getAttribute("data-ans") === correctCubeRoot) b.classList.add("correct");
+  });
+  if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#9200; Time's up! ∛${cubeVal.toLocaleString()} = ${correctCubeRoot}</span>`;
+  audio.lose();
+  setTimeout(startNextQuiz, 1500);
+}
+
+// Keyboard shortcuts (1, 2, 3, 4, Esc)
+window.addEventListener("keydown", e => {
+  if (challengeModal.style.display !== "grid") return;
+  if (["1", "2", "3", "4"].includes(e.key)) {
+    const btns = optionsGrid.querySelectorAll(".quiz-btn");
+    const idx = parseInt(e.key) - 1;
+    if (btns[idx] && !btns[idx].disabled) btns[idx].click();
+  }
+  if (e.key === "Escape") closeChallenge.click();
+});

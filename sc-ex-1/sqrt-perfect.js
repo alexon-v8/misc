@@ -182,7 +182,59 @@ function calculateRoot() {
   });
 }
 
-// 2D Balance Scale Canvas
+// 2D Balance Scale Canvas with Pan, Tilt & Zoom
+let isPointerDown = false, pointerButton = 0, prevX = 0, prevY = 0;
+let panX = 0, panY = 0, zoomScale = 1, tiltAngle = 0;
+
+scaleCanvas.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
+  prevX = e.clientX;
+  prevY = e.clientY;
+  try { scaleCanvas.setPointerCapture(e.pointerId); } catch(err) {}
+});
+
+scaleCanvas.addEventListener("pointermove", e => {
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // Middle click / wheel-drag -> orbit/tilt around center
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    tiltAngle += dx * 0.005;
+  } else {
+    // Left drag -> translate scene
+    panX += dx;
+    panY += dy;
+  }
+  const p = Math.floor(currentSquare / 100);
+  const t = Math.floor(Math.sqrt(p));
+  drawBalanceScale(p, t * (t + 1));
+});
+
+scaleCanvas.addEventListener("pointerup", e => {
+  isPointerDown = false;
+  try { scaleCanvas.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+scaleCanvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+  zoomScale = Math.max(0.5, Math.min(3.0, zoomScale * zoomFactor));
+  const p = Math.floor(currentSquare / 100);
+  const t = Math.floor(Math.sqrt(p));
+  drawBalanceScale(p, t * (t + 1));
+}, { passive: false });
+
+scaleCanvas.addEventListener("dblclick", () => {
+  panX = 0; panY = 0; zoomScale = 1; tiltAngle = 0;
+  const p = Math.floor(currentSquare / 100);
+  const t = Math.floor(Math.sqrt(p));
+  drawBalanceScale(p, t * (t + 1));
+});
+
 function drawBalanceScale(prefix, benchmark) {
   const dpr = window.devicePixelRatio || 1;
   const w = scaleCanvas.clientWidth, h = scaleCanvas.clientHeight;
@@ -192,6 +244,12 @@ function drawBalanceScale(prefix, benchmark) {
 
   const cx = w / 2, cy = h * 0.45;
   const beamLength = Math.min(w * 0.7, 280);
+
+  sCtx.save();
+  sCtx.translate(cx + panX, cy + panY);
+  sCtx.scale(zoomScale, zoomScale);
+  sCtx.rotate(tiltAngle);
+  sCtx.translate(-cx, -cy);
 
   // Fulcrum Base
   sCtx.fillStyle = "#1e293b";
@@ -224,10 +282,6 @@ function drawBalanceScale(prefix, benchmark) {
   sCtx.lineTo(beamLength / 2, 0);
   sCtx.stroke();
 
-  const leftX = -beamLength / 2;
-  const rightX = beamLength / 2;
-
-  // Hanging Pan Strings
   sCtx.restore(); // Draw pans in world space to hang straight down
 
   const cosA = Math.cos(currentTiltAngle);
@@ -272,6 +326,8 @@ function drawBalanceScale(prefix, benchmark) {
 
   drawPan(pLeftX, pLeftY, `${prefix}`, "PREFIX", "#38bdf8");
   drawPan(pRightX, pRightY, `${benchmark}`, "t(t+1)", "#f43f5e");
+
+  sCtx.restore(); // restore scene transform
 }
 
 squareSelect.addEventListener("change", () => {
@@ -327,8 +383,10 @@ const challengeModal = document.getElementById("challengeModal");
 const closeChallenge = document.getElementById("closeChallenge");
 const streakCount = document.getElementById("streakCount");
 const timerVal = document.getElementById("timerVal");
+const timerBar = document.getElementById("timerBar");
 const targetPrompt = document.getElementById("targetPrompt");
 const optionsGrid = document.getElementById("optionsGrid");
+const quizFeedback = document.getElementById("quizFeedback");
 
 let streak = 0, timeLeft = 20, quizTimer = null, correctRoot = 0;
 
@@ -349,53 +407,100 @@ function startNextQuiz() {
   if (quizTimer) clearInterval(quizTimer);
   timeLeft = 20;
   timerVal.textContent = timeLeft + "s";
+  if (timerBar) timerBar.style.width = "100%";
+  if (quizFeedback) quizFeedback.textContent = "";
 
   const rootOptions = [24, 36, 43, 54, 56, 64, 72, 76, 84, 86, 89, 98];
   correctRoot = rootOptions[Math.floor(Math.random() * rootOptions.length)];
   const square = correctRoot * correctRoot;
   targetPrompt.textContent = `√${square}`;
 
-  const opts = new Set([correctRoot]);
-  while (opts.size < 4) {
-    const fake = correctRoot + (Math.floor(Math.random() * 5) - 2) * 2;
-    if (fake > 10) opts.add(fake);
+  // Generate 3 plausible distractors
+  const candidateDeltas = [2, -2, 10, -10, 4, -4, 8, -8];
+  const distSet = new Set();
+  for (const d of candidateDeltas) {
+    const cand = correctRoot + d;
+    if (cand > 10 && cand !== correctRoot) distSet.add(cand);
+    if (distSet.size >= 3) break;
   }
-  const shuffled = Array.from(opts).sort(() => Math.random() - 0.5);
+  let fallback = 6;
+  while (distSet.size < 3) {
+    distSet.add(correctRoot + fallback);
+    fallback += 4;
+  }
+
+  const allOpts = [correctRoot, ...Array.from(distSet)].sort(() => Math.random() - 0.5);
 
   optionsGrid.innerHTML = "";
-  shuffled.forEach(ans => {
+  allOpts.forEach((ans, idx) => {
     const btn = document.createElement("button");
     btn.className = "quiz-btn";
-    btn.textContent = ans;
-    btn.addEventListener("click", () => checkQuiz(ans));
+    btn.setAttribute("data-ans", ans);
+    btn.innerHTML = `<span class="key-badge">${idx + 1}</span> ${ans}`;
+    btn.addEventListener("click", () => handleQuizAnswer(ans, btn, square));
     optionsGrid.appendChild(btn);
   });
 
+  const totalTime = 20;
   quizTimer = setInterval(() => {
     timeLeft--;
     timerVal.textContent = timeLeft + "s";
+    if (timerBar) {
+      const pct = Math.max(0, (timeLeft / totalTime) * 100);
+      timerBar.style.width = `${pct}%`;
+    }
     if (timeLeft <= 0) {
       clearInterval(quizTimer);
-      audio.lose();
-      alert(`Time up! √${square} = ${correctRoot}`);
-      startNextQuiz();
+      handleQuizTimeout(square);
     }
   }, 1000);
 }
 
-function checkQuiz(choice) {
+function handleQuizAnswer(choice, btn, square) {
   clearInterval(quizTimer);
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => b.disabled = true);
+
   if (choice === correctRoot) {
-    audio.win();
+    btn.classList.add("correct");
     streak++;
     streakCount.textContent = streak;
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #4ade80; font-weight: bold; font-size: 1.15rem; text-align: center;">Correct! +1 Streak</div>`;
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-pass">&#10004; Correct! +1 Streak</span>`;
+    audio.win();
     setTimeout(startNextQuiz, 900);
   } else {
-    audio.lose();
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #f43f5e; font-weight: bold; font-size: 1.15rem; text-align: center;">Incorrect! Answer was ${correctRoot}</div>`;
+    btn.classList.add("wrong");
+    btns.forEach(b => {
+      if (+b.getAttribute("data-ans") === correctRoot) b.classList.add("correct");
+    });
     streak = 0;
     streakCount.textContent = streak;
-    setTimeout(startNextQuiz, 1400);
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#10008; Incorrect! Answer was ${correctRoot}</span>`;
+    audio.lose();
+    setTimeout(startNextQuiz, 1500);
   }
 }
+
+function handleQuizTimeout(square) {
+  streak = 0;
+  streakCount.textContent = streak;
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => {
+    b.disabled = true;
+    if (+b.getAttribute("data-ans") === correctRoot) b.classList.add("correct");
+  });
+  if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#9200; Time's up! √${square} = ${correctRoot}</span>`;
+  audio.lose();
+  setTimeout(startNextQuiz, 1500);
+}
+
+// Keyboard shortcuts (1, 2, 3, 4, Esc)
+window.addEventListener("keydown", e => {
+  if (challengeModal.style.display !== "grid") return;
+  if (["1", "2", "3", "4"].includes(e.key)) {
+    const btns = optionsGrid.querySelectorAll(".quiz-btn");
+    const idx = parseInt(e.key) - 1;
+    if (btns[idx] && !btns[idx].disabled) btns[idx].click();
+  }
+  if (e.key === "Escape") closeChallenge.click();
+});

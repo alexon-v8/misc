@@ -163,15 +163,54 @@ const laserMat = new THREE.LineBasicMaterial({ color: 0xf472b6, transparent: tru
 const laserLines = new THREE.LineSegments(laserGeo, laserMat);
 world.add(laserLines);
 
-// Touch/Mouse Orbit
-let isDragging = false, prevX = 0, prevY = 0, rotY = 0.2, rotX = 0.1;
-box.addEventListener("pointerdown", e => { isDragging = true; prevX = e.clientX; prevY = e.clientY; });
-window.addEventListener("pointerup", () => isDragging = false);
-window.addEventListener("pointermove", e => {
-  if (!isDragging) return;
-  rotY += (e.clientX - prevX) * 0.007;
-  rotX = Math.max(-0.5, Math.min(0.5, rotX + (e.clientY - prevY) * 0.007));
-  prevX = e.clientX; prevY = e.clientY;
+// Touch & Mouse: Left-drag translates whole scene, Wheel-drag orbits around central focus
+let isPointerDown = false;
+let pointerButton = 0;
+let prevX = 0, prevY = 0;
+let panX = 0, panY = 0;
+let rotY = 0.2, rotX = 0.1;
+let camZ = 7.5;
+
+box.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
+  prevX = e.clientX;
+  prevY = e.clientY;
+  box.setPointerCapture(e.pointerId);
+});
+
+box.addEventListener("pointermove", e => {
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // If middle button / scrollwheel pressed (e.button === 1 or e.buttons & 4) -> ORBIT
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    rotY += dx * 0.008;
+    rotX = Math.max(-0.8, Math.min(0.8, rotX + dy * 0.008));
+  } else {
+    // Left drag -> TRANSLATE (Pan) the whole scene
+    panX += dx * 0.008;
+    panY -= dy * 0.008;
+  }
+});
+
+box.addEventListener("pointerup", e => {
+  isPointerDown = false;
+  try { box.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+box.addEventListener("wheel", e => {
+  e.preventDefault();
+  camZ = Math.max(3.5, Math.min(15, camZ + e.deltaY * 0.006));
+  camera.position.z = camZ;
+}, { passive: false });
+
+box.addEventListener("dblclick", () => {
+  panX = 0; panY = 0; rotY = 0.2; rotX = 0.1; camZ = 7.5;
+  camera.position.z = 7.5;
 });
 
 // Mode State
@@ -385,9 +424,11 @@ update();
 
 function animate() {
   requestAnimationFrame(animate);
-  if (!isDragging) rotY += 0.002;
-  world.rotation.y += (rotY - world.rotation.y) * 0.1;
-  world.rotation.x += (rotX - world.rotation.x) * 0.1;
+  // Smoothly interpolate translation and rotation
+  world.position.x += (panX - world.position.x) * 0.15;
+  world.position.y += (panY - world.position.y) * 0.15;
+  world.rotation.y += (rotY - world.rotation.y) * 0.12;
+  world.rotation.x += (rotX - world.rotation.x) * 0.12;
   renderer.render(scene, camera);
 }
 animate();
@@ -443,8 +484,10 @@ const challengeModal = document.getElementById("challengeModal");
 const closeChallenge = document.getElementById("closeChallenge");
 const streakCount = document.getElementById("streakCount");
 const timerVal = document.getElementById("timerVal");
+const timerBar = document.getElementById("timerBar");
 const targetTime = document.getElementById("targetTime");
 const optionsGrid = document.getElementById("optionsGrid");
+const quizFeedback = document.getElementById("quizFeedback");
 
 let streak = 0, timeLeft = 20, quizTimer = null, currentAnswer = 0;
 
@@ -465,6 +508,8 @@ function startNextQuiz() {
   if (quizTimer) clearInterval(quizTimer);
   timeLeft = 20;
   timerVal.textContent = timeLeft + "s";
+  if (timerBar) timerBar.style.width = "100%";
+  if (quizFeedback) quizFeedback.textContent = "";
 
   const rh = Math.floor(Math.random() * 12) + 1;
   const rm = Math.floor(Math.random() * 12) * 5; // Clean 5-minute increments
@@ -472,50 +517,96 @@ function startNextQuiz() {
 
   const diff = Math.abs(30 * (rh % 12) - 5.5 * rm);
   const correct = diff > 180 ? 360 - diff : diff;
-  currentAnswer = correct;
+  currentAnswer = +correct.toFixed(1);
 
-  // Generate 4 options
-  const opts = new Set([correct.toFixed(1)]);
-  while (opts.size < 4) {
-    const fake = Math.abs(correct + (Math.floor(Math.random() * 5) - 2) * 15);
-    opts.add(fake.toFixed(1));
+  // Deterministically generate 3 distinct plausible distractors
+  const candidateDeltas = [15, 30, -15, -30, 20, -20, 45, 10, -10];
+  const distSet = new Set();
+  for (const d of candidateDeltas) {
+    let cand = Math.abs(currentAnswer + d);
+    if (cand > 180) cand = 360 - cand;
+    cand = +cand.toFixed(1);
+    if (cand !== currentAnswer) distSet.add(cand);
+    if (distSet.size >= 3) break;
   }
-  const shuffled = Array.from(opts).sort(() => Math.random() - 0.5);
+  let fallback = 25;
+  while (distSet.size < 3) {
+    distSet.add(+(currentAnswer + fallback).toFixed(1));
+    fallback += 15;
+  }
+
+  const allOpts = [currentAnswer, ...Array.from(distSet)].sort(() => Math.random() - 0.5);
 
   optionsGrid.innerHTML = "";
-  shuffled.forEach(opt => {
+  allOpts.forEach((opt, idx) => {
     const btn = document.createElement("button");
     btn.className = "quiz-btn";
-    btn.textContent = `${opt}°`;
-    btn.addEventListener("click", () => checkQuiz(+opt));
+    btn.setAttribute("data-opt", opt);
+    btn.innerHTML = `<span class="key-badge">${idx + 1}</span> ${opt}&deg;`;
+    btn.addEventListener("click", () => handleQuizAnswer(opt, btn));
     optionsGrid.appendChild(btn);
   });
 
+  const totalTime = 20;
   quizTimer = setInterval(() => {
     timeLeft--;
     timerVal.textContent = timeLeft + "s";
+    if (timerBar) {
+      const pct = Math.max(0, (timeLeft / totalTime) * 100);
+      timerBar.style.width = `${pct}%`;
+    }
     if (timeLeft <= 0) {
       clearInterval(quizTimer);
-      audio.lose();
-      alert(`Time up! The correct angle was ${correct.toFixed(1)}°`);
-      startNextQuiz();
+      handleQuizTimeout();
     }
   }, 1000);
 }
 
-function checkQuiz(val) {
+function handleQuizAnswer(selected, btn) {
   clearInterval(quizTimer);
-  if (Math.abs(val - currentAnswer) < 0.1) {
-    audio.win();
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => b.disabled = true);
+
+  if (Math.abs(selected - currentAnswer) < 0.1) {
+    btn.classList.add("correct");
     streak++;
     streakCount.textContent = streak;
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #4ade80; font-weight: bold; font-size: 1.2rem; text-align: center;">Correct! +1 Streak</div>`;
-    setTimeout(startNextQuiz, 1000);
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-pass">&#10004; Correct! +1 Streak</span>`;
+    audio.win();
+    setTimeout(startNextQuiz, 900);
   } else {
-    audio.lose();
-    optionsGrid.innerHTML = `<div style="grid-column: 1/-1; color: #f43f5e; font-weight: bold; font-size: 1.2rem; text-align: center;">Wrong! Expected ${currentAnswer.toFixed(1)}°</div>`;
+    btn.classList.add("wrong");
+    btns.forEach(b => {
+      if (Math.abs(+b.getAttribute("data-opt") - currentAnswer) < 0.1) b.classList.add("correct");
+    });
     streak = 0;
     streakCount.textContent = streak;
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#10008; Incorrect! Answer was ${currentAnswer}&deg;</span>`;
+    audio.lose();
     setTimeout(startNextQuiz, 1500);
   }
 }
+
+function handleQuizTimeout() {
+  streak = 0;
+  streakCount.textContent = streak;
+  const btns = optionsGrid.querySelectorAll(".quiz-btn");
+  btns.forEach(b => {
+    b.disabled = true;
+    if (Math.abs(+b.getAttribute("data-opt") - currentAnswer) < 0.1) b.classList.add("correct");
+  });
+  if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#9200; Time's up! Angle was ${currentAnswer}&deg;</span>`;
+  audio.lose();
+  setTimeout(startNextQuiz, 1500);
+}
+
+// Keyboard shortcuts (1, 2, 3, 4)
+window.addEventListener("keydown", e => {
+  if (challengeModal.style.display !== "grid") return;
+  if (["1", "2", "3", "4"].includes(e.key)) {
+    const btns = optionsGrid.querySelectorAll(".quiz-btn");
+    const idx = parseInt(e.key) - 1;
+    if (btns[idx] && !btns[idx].disabled) btns[idx].click();
+  }
+  if (e.key === "Escape") closeChallenge.click();
+});

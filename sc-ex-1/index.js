@@ -58,11 +58,25 @@ class SoundEngine {
 
 const audio = new SoundEngine();
 
-// --- MODULE CATALOGUE ---
+// --- COMPLETE 27-FILE LOCAL DIRECTORY REGISTRY ---
+const ALL_LOCAL_FILES = [
+  "index.html", "index.css", "index.js",
+  "mirror-clock.html", "mirror-clock.css", "mirror-clock.js",
+  "calendar-mod7.html", "calendar-mod7.css", "calendar-mod7.js",
+  "squaring-shortcut.html", "squaring-shortcut.css", "squaring-shortcut.js",
+  "sqrt-perfect.html", "sqrt-perfect.css", "sqrt-perfect.js",
+  "newton-sqrt.html", "newton-sqrt.css", "newton-sqrt.js",
+  "cbrt-perfect.html", "cbrt-perfect.css", "cbrt-perfect.js",
+  "rule-72-110.html", "rule-72-110.css", "rule-72-110.js",
+  "mod9-checksum.html", "mod9-checksum.css", "mod9-checksum.js"
+];
+
+// --- MODULE CATALOGUE (All 27 Files Indexed) ---
 const MODULES = [
   {
     id: "01",
     file: "mirror-clock.html",
+    files: ["mirror-clock.html", "mirror-clock.css", "mirror-clock.js"],
     title: "3D Mirror Clock & Hand Angles",
     desc: "Interactive 3D analog clock facing a glowing mirror with vertical & horizontal water reflection axes, 3D laser symmetry rays, and live |30H - 5.5M| protractor.",
     formula: "θ = |30H − 5.5M|",
@@ -70,12 +84,13 @@ const MODULES = [
     accent: "#38bdf8",
     glow: "rgba(56, 189, 248, 0.35)",
     tech: "3D WebGL (Three.js) + Canvas",
-    tags: ["Reflection Symmetry", "11:60 Subtraction", "Angle Protractor"],
+    tags: ["Reflection Symmetry", "11:60 Subtraction", "Angle Protractor", "Angle Sniper"],
     type: "clock"
   },
   {
     id: "02",
     file: "calendar-mod7.html",
+    files: ["calendar-mod7.html", "calendar-mod7.css", "calendar-mod7.js"],
     title: "Calendar Modulo-7 Arithmetic",
     desc: "Rotating 3D Heptagonal Time Gear and Mod-7 Remainder Vaporizer Funnel that deconstructs any calendar date into leap offsets and strikes out multiples of 7.",
     formula: "Day = (C + Y + ⌊Y/4⌋ + M + D) mod 7",
@@ -83,12 +98,13 @@ const MODULES = [
     accent: "#a855f7",
     glow: "rgba(168, 85, 247, 0.35)",
     tech: "3D Heptagonal Prism + Particles",
-    tags: ["Time Gear", "Vaporizer Funnel", "Century Codes"],
+    tags: ["Time Gear", "Vaporizer Funnel", "Century Codes", "Date Day Blitz"],
     type: "calendar"
   },
   {
     id: "03",
     file: "squaring-shortcut.html",
+    files: ["squaring-shortcut.html", "squaring-shortcut.css", "squaring-shortcut.js"],
     title: "Squaring Shortcut: (a+d)(a-d) + d²",
     desc: "Dynamic geometric algebra transformation where slicing an a×a square glides a strip around to form an (a+d)(a-d) rectangle plus a d² corner square.",
     formula: "a² = (a + d)(a − d) + d²",
@@ -96,12 +112,13 @@ const MODULES = [
     accent: "#4ade80",
     glow: "rgba(74, 222, 128, 0.35)",
     tech: "Interactive 2D Canvas Morph",
-    tags: ["Vedic Algebra", "Geometric Slicing", "Mental Math"],
+    tags: ["Vedic Algebra", "Geometric Slicing", "Mental Math", "Squaring Duel"],
     type: "squaring"
   },
   {
     id: "04",
     file: "sqrt-perfect.html",
+    files: ["sqrt-perfect.html", "sqrt-perfect.css", "sqrt-perfect.js"],
     title: "Perfect Square Roots (√N)",
     desc: "High-tech laser digit-splitter, unit-digit cycle wheel, and animated mechanical balance scale comparing prefix vs t(t+1) to solve roots in seconds.",
     formula: "√N: Split [Prefix | Last 2] & Compare t(t+1)",
@@ -109,12 +126,13 @@ const MODULES = [
     accent: "#f43f5e",
     glow: "rgba(244, 63, 94, 0.35)",
     tech: "Canvas Splitter & Balance Scale",
-    tags: ["Balance Scale", "Laser Splitter", "Square Root Duel"],
+    tags: ["Balance Scale", "Laser Splitter", "Square Root Duel", "Unit Cycle"],
     type: "sqrt"
   },
   {
     id: "05",
     file: "newton-sqrt.html",
+    files: ["newton-sqrt.html", "newton-sqrt.css", "newton-sqrt.js"],
     title: "Newton-Raphson Imperfect Square Roots",
     desc: "Visualizing √N ≈ a + d/(2a) via 'Liquid Border Geometry' where surplus area flows along two edges with a zoom magnifier highlighting the corner error (d/2a)².",
     formula: "√N ≈ a + d/(2a) − (d/2a)² / (2a)",
@@ -122,12 +140,13 @@ const MODULES = [
     accent: "#f59e0b",
     glow: "rgba(245, 158, 11, 0.35)",
     tech: "Liquid Canvas + Tangent Curve",
-    tags: ["Liquid Border", "Tangent Iteration", "Corner Error"],
+    tags: ["Liquid Border", "Tangent Iteration", "Corner Error", "Precision Root Estimator"],
     type: "newton"
   },
   {
     id: "06",
     file: "cbrt-perfect.html",
+    files: ["cbrt-perfect.html", "cbrt-perfect.css", "cbrt-perfect.js"],
     title: "Perfect Cube Roots (∛N)",
     desc: "Exploding 3D Voxel Cube illustrating (10a + b)³ expansion blocks, coupled with the unique 2↔8 and 3↔7 Unit Digit Flip Gate and cube staircase bracket.",
     formula: "(10a + b)³ = 1000a³ + 300a²b + 30ab² + b³",
@@ -135,12 +154,13 @@ const MODULES = [
     accent: "#38bdf8",
     glow: "rgba(56, 189, 248, 0.35)",
     tech: "3D Exploding Voxels (Three.js)",
-    tags: ["3D Voxel Cube", "Flip Gate (2↔8, 3↔7)", "Staircase Lookup"],
+    tags: ["3D Voxel Cube", "Flip Gate (2↔8, 3↔7)", "Staircase Lookup", "Cube Sprint"],
     type: "cbrt"
   },
   {
     id: "07",
     file: "rule-72-110.html",
+    files: ["rule-72-110.html", "rule-72-110.css", "rule-72-110.js"],
     title: "Bio-Growth Rule of 72 & 110",
     desc: "Interactive Petri dish cellular automata of bacterial binary fission, algae blooms, and 72-factor pie chart slicer showing why biology and finance rely on 72 & 110.",
     formula: "t_double ≈ 72 / r%  |  t_triple ≈ 110 / r%",
@@ -148,12 +168,13 @@ const MODULES = [
     accent: "#4ade80",
     glow: "rgba(74, 222, 128, 0.35)",
     tech: "Petri Dish Simulator + Exponential Curve",
-    tags: ["Binary Fission", "12 Divisors of 72", "Doubling Time"],
+    tags: ["Binary Fission", "12 Divisors of 72", "Doubling Time", "Doubling Time Blitz"],
     type: "bio"
   },
   {
     id: "08",
     file: "mod9-checksum.html",
+    files: ["mod9-checksum.html", "mod9-checksum.css", "mod9-checksum.js"],
     title: "Mod-9 Digital Roots & Checksums",
     desc: "Base-10 laser slicer, 'Casting Out Nines' particle collider where digits summing to 9 annihilate, and Multiplication Checksum X-Ray scanner catching tampered digits.",
     formula: "dr(A × B) ≡ dr(A) × dr(B) (mod 9)",
@@ -161,7 +182,7 @@ const MODULES = [
     accent: "#a855f7",
     glow: "rgba(168, 85, 247, 0.35)",
     tech: "Particle Collider + Tamper Scanner",
-    tags: ["Casting Out 9s", "Digit Annihilator", "Tamper Detective"],
+    tags: ["Casting Out 9s", "Digit Annihilator", "Tamper Detective", "Multiplication Checksum"],
     type: "mod9"
   }
 ];
@@ -332,6 +353,30 @@ let searchQuery = "";
 
 function applyFilters() {
   const q = searchQuery.toLowerCase().trim();
+
+  // If search query attempts path traversal or external URL outside the directory
+  if (q.includes("..") || q.includes("://") || q.startsWith("/") || q.includes("\\")) {
+    arcadeGrid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #f43f5e; font-family: var(--font-mono);">
+        ⚠️ External path or traversal query rejected. Search terminated within local directory.
+      </div>
+    `;
+    return;
+  }
+
+  // If query specifically references a filename extension (.html, .css, .js)
+  if (q.endsWith(".html") || q.endsWith(".css") || q.endsWith(".js")) {
+    const isLocal = ALL_LOCAL_FILES.some(f => f.toLowerCase() === q || f.toLowerCase().includes(q));
+    if (!isLocal) {
+      arcadeGrid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #f43f5e; font-family: var(--font-mono);">
+          ⚠️ File "${searchQuery}" is not found in the local directory. Search terminated.
+        </div>
+      `;
+      return;
+    }
+  }
+
   const filtered = MODULES.filter(mod => {
     const matchCat = currentCategory === "all" || mod.category === currentCategory;
     const matchSearch =
@@ -339,6 +384,7 @@ function applyFilters() {
       mod.title.toLowerCase().includes(q) ||
       mod.desc.toLowerCase().includes(q) ||
       mod.formula.toLowerCase().includes(q) ||
+      (mod.files && mod.files.some(f => f.toLowerCase().includes(q))) ||
       mod.tags.some(t => t.toLowerCase().includes(q));
     return matchCat && matchSearch;
   });
@@ -460,14 +506,51 @@ function resizeParticles() {
 window.addEventListener("resize", resizeParticles);
 resizeParticles();
 
-let mouseX = -1000, mouseY = -1000;
-window.addEventListener("mousemove", e => {
+// --- PARTICLE CANVAS CONTROLS (PAN, TILT & ZOOM) ---
+let isPointerDown = false, pointerButton = 0, prevX = 0, prevY = 0;
+let panX = 0, panY = 0, zoomScale = 1, tiltAngle = 0;
+
+bgCanvas.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
+  prevX = e.clientX;
+  prevY = e.clientY;
+});
+window.addEventListener("pointerup", () => isPointerDown = false);
+window.addEventListener("pointermove", e => {
   mouseX = e.clientX;
   mouseY = e.clientY;
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // Middle click / wheel-drag -> tilt/orbit
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    tiltAngle += dx * 0.003;
+  } else {
+    // Left drag -> translate particle space
+    panX += dx;
+    panY += dy;
+  }
 });
+
+window.addEventListener("wheel", e => {
+  if (e.target.closest(".arcade-grid, .search-box, .filter-pills")) return;
+  const zoomFactor = e.deltaY < 0 ? 1.05 : 0.95;
+  zoomScale = Math.max(0.6, Math.min(2.5, zoomScale * zoomFactor));
+}, { passive: true });
 
 function animateParticles() {
   bgCtx.clearRect(0, 0, pWidth, pHeight);
+
+  bgCtx.save();
+  bgCtx.translate(pWidth / 2 + panX, pHeight / 2 + panY);
+  bgCtx.scale(zoomScale, zoomScale);
+  bgCtx.rotate(tiltAngle);
+  bgCtx.translate(-pWidth / 2, -pHeight / 2);
+
   particles.forEach(p => {
     p.x += p.vx;
     p.y += p.vy;
@@ -492,6 +575,8 @@ function animateParticles() {
     bgCtx.fillText(p.sym, p.x, p.y);
     bgCtx.restore();
   });
+
+  bgCtx.restore();
   requestAnimationFrame(animateParticles);
 }
 animateParticles();

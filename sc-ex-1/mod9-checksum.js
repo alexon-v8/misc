@@ -218,6 +218,50 @@ function createSparks(x, y, color) {
   }
 }
 
+// --- MOUSE TRANSLATE, ORBIT/TILT & ZOOM CONTROLS ---
+let isPointerDown = false, pointerButton = 0, prevX = 0, prevY = 0;
+let panX = 0, panY = 0, zoomScale = 1, tiltAngle = 0;
+
+cCvs.addEventListener("pointerdown", e => {
+  isPointerDown = true;
+  pointerButton = e.button;
+  prevX = e.clientX;
+  prevY = e.clientY;
+  try { cCvs.setPointerCapture(e.pointerId); } catch(err) {}
+});
+
+cCvs.addEventListener("pointermove", e => {
+  if (!isPointerDown) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX;
+  prevY = e.clientY;
+
+  // Middle click / wheel-drag -> orbit/tilt around center
+  if (pointerButton === 1 || (e.buttons & 4)) {
+    tiltAngle += dx * 0.005;
+  } else {
+    // Left drag -> translate scene
+    panX += dx;
+    panY += dy;
+  }
+});
+
+cCvs.addEventListener("pointerup", e => {
+  isPointerDown = false;
+  try { cCvs.releasePointerCapture(e.pointerId); } catch(err) {}
+});
+
+cCvs.addEventListener("wheel", e => {
+  e.preventDefault();
+  const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+  zoomScale = Math.max(0.5, Math.min(3.0, zoomScale * zoomFactor));
+}, { passive: false });
+
+cCvs.addEventListener("dblclick", () => {
+  panX = 0; panY = 0; zoomScale = 1; tiltAngle = 0;
+});
+
 function renderCollider() {
   const dpr = window.devicePixelRatio || 1;
   const w = cCvs.clientWidth, h = cCvs.clientHeight;
@@ -227,6 +271,12 @@ function renderCollider() {
 
   const cx = w / 2, cy = h / 2;
   const ringR = Math.min(w, h) * 0.4;
+
+  cCtx.save();
+  cCtx.translate(cx + panX, cy + panY);
+  cCtx.scale(zoomScale, zoomScale);
+  cCtx.rotate(tiltAngle);
+  cCtx.translate(-cx, -cy);
 
   // Collider Chamber Ring
   cCtx.strokeStyle = "rgba(168, 85, 247, 0.35)";
@@ -285,6 +335,7 @@ function renderCollider() {
     cCtx.restore();
   });
 
+  cCtx.restore(); // restore scene transform
   requestAnimationFrame(renderCollider);
 }
 
@@ -429,9 +480,11 @@ const challengeModal = document.getElementById("challengeModal");
 const closeChallenge = document.getElementById("closeChallenge");
 const streakCount = document.getElementById("streakCount");
 const timerVal = document.getElementById("timerVal");
+const timerBar = document.getElementById("timerBar");
 const targetEquation = document.getElementById("targetEquation");
 const btnValid = document.getElementById("btnValid");
 const btnTampered = document.getElementById("btnTampered");
+const quizFeedback = document.getElementById("quizFeedback");
 
 let streak = 0, timeLeft = 20, quizTimer = null, isEquationTampered = false;
 
@@ -452,6 +505,13 @@ function startNextQuiz() {
   if (quizTimer) clearInterval(quizTimer);
   timeLeft = 20;
   timerVal.textContent = timeLeft + "s";
+  if (timerBar) timerBar.style.width = "100%";
+  if (quizFeedback) quizFeedback.textContent = "";
+
+  btnValid.disabled = false;
+  btnTampered.disabled = false;
+  btnValid.classList.remove("correct", "wrong");
+  btnTampered.classList.remove("correct", "wrong");
 
   const qA = Math.floor(Math.random() * 800) + 120;
   const qB = Math.floor(Math.random() * 80) + 12;
@@ -461,41 +521,70 @@ function startNextQuiz() {
   isEquationTampered = Math.random() > 0.5;
   let displayedProd = trueProd;
   if (isEquationTampered) {
-    // Add/sub random non-multiple of 9
     const delta = (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.5 ? 1 : -1);
     displayedProd = trueProd + (delta % 9 === 0 ? 1 : delta);
   }
 
   targetEquation.textContent = `${qA} × ${qB} = ${displayedProd.toLocaleString()}`;
 
+  const totalTime = 20;
   quizTimer = setInterval(() => {
     timeLeft--;
     timerVal.textContent = timeLeft + "s";
+    if (timerBar) {
+      const pct = Math.max(0, (timeLeft / totalTime) * 100);
+      timerBar.style.width = `${pct}%`;
+    }
     if (timeLeft <= 0) {
       clearInterval(quizTimer);
-      audio.lose();
-      alert(`Time up! The equation was ${isEquationTampered ? 'TAMPERED' : 'VALID'}`);
-      startNextQuiz();
+      handleQuizTimeout();
     }
   }, 1000);
 }
 
-btnValid.addEventListener("click", () => checkDetectAnswer(false));
-btnTampered.addEventListener("click", () => checkDetectAnswer(true));
+btnValid.addEventListener("click", () => checkDetectAnswer(false, btnValid));
+btnTampered.addEventListener("click", () => checkDetectAnswer(true, btnTampered));
 
-function checkDetectAnswer(userGuessTampered) {
+function checkDetectAnswer(userGuessTampered, btn) {
   clearInterval(quizTimer);
+  btnValid.disabled = true;
+  btnTampered.disabled = true;
+
   if (userGuessTampered === isEquationTampered) {
+    btn.classList.add("correct");
     audio.win();
     streak++;
     streakCount.textContent = streak;
-    targetEquation.innerHTML = `<span style="color: #4ade80;">Correct! You caught it! +1</span>`;
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-pass">&#10004; Correct! You caught it! +1 Streak</span>`;
     setTimeout(startNextQuiz, 900);
   } else {
+    btn.classList.add("wrong");
+    const rightBtn = isEquationTampered ? btnTampered : btnValid;
+    rightBtn.classList.add("correct");
     audio.lose();
-    targetEquation.innerHTML = `<span style="color: #f43f5e;">Wrong! It was ${isEquationTampered ? 'TAMPERED' : 'VALID'}</span>`;
     streak = 0;
     streakCount.textContent = streak;
-    setTimeout(startNextQuiz, 1400);
+    if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#10008; Incorrect! Equation was actually ${isEquationTampered ? 'TAMPERED' : 'VALID'}</span>`;
+    setTimeout(startNextQuiz, 1500);
   }
 }
+
+function handleQuizTimeout() {
+  streak = 0;
+  streakCount.textContent = streak;
+  btnValid.disabled = true;
+  btnTampered.disabled = true;
+  const rightBtn = isEquationTampered ? btnTampered : btnValid;
+  rightBtn.classList.add("correct");
+  audio.lose();
+  if (quizFeedback) quizFeedback.innerHTML = `<span class="fb-fail">&#9200; Time's up! Calculation was ${isEquationTampered ? 'TAMPERED' : 'VALID'}</span>`;
+  setTimeout(startNextQuiz, 1500);
+}
+
+// Keyboard shortcuts (1, 2, Esc)
+window.addEventListener("keydown", e => {
+  if (challengeModal.style.display !== "grid") return;
+  if (e.key === "1" && !btnValid.disabled) btnValid.click();
+  if (e.key === "2" && !btnTampered.disabled) btnTampered.click();
+  if (e.key === "Escape") closeChallenge.click();
+});
